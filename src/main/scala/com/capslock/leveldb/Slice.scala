@@ -33,7 +33,7 @@ final class Slice(val data: Array[Byte], val length: Int, val offset: Int) exten
     override def hashCode(): Int = {
         if (hash == 0) {
             var result = length
-            for (i <- offset.to(offset + length - 1)) {
+            for (i <- offset.until(offset + length)) {
                 result = result * 31 + data(i)
             }
             if (result == 0) {
