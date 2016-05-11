@@ -1,5 +1,8 @@
 package com.capslock.leveldb
 
+import java.io.OutputStream
+import java.nio.ByteBuffer
+
 /**
   * Created by alvin.
   */
@@ -11,36 +14,32 @@ final class Slice(val data: Array[Byte], val length: Int, val offset: Int) exten
     }
 
     def getUnsignedByte(index: Int): Short = {
-        getByte(index + offset).asInstanceOf[Short]
+        getByte(index + offset).toShort
     }
 
     def getShort(index: Int): Short = {
         val innerIndex = index + offset
-        (getByte(innerIndex) | (getByte(innerIndex + 1) << 8)).asInstanceOf[Short]
+        (data(innerIndex) & 0xff | (data(innerIndex + 1) << 8)).toShort
     }
 
     def getInt(index: Int): Int = {
         val innerIndex = index + offset
-        getByte(innerIndex) |
-            (getByte(innerIndex + 1) << 8) |
-            (getByte(innerIndex + 2) << 16) |
-            (getByte(innerIndex + 3) << 24)
-    }
-
-    def getByteAsLong(index: Int): Long = {
-        getByte(index).asInstanceOf[Long]
+        data(innerIndex) & 0xff |
+            ((data(innerIndex + 1) & 0xff) << 8) |
+            ((data(innerIndex + 2) & 0xff) << 16) |
+            ((data(innerIndex + 3) & 0xff) << 24)
     }
 
     def getLong(index: Int): Long = {
         val innerIndex = index + offset
-        getByteAsLong(innerIndex) |
-            (getByteAsLong(innerIndex + 1) << 8) |
-            (getByteAsLong(innerIndex + 2) << 16) |
-            (getByteAsLong(innerIndex + 3) << 24) |
-            (getByteAsLong(innerIndex + 4) << 32) |
-            (getByteAsLong(innerIndex + 5) << 40) |
-            (getByteAsLong(innerIndex + 6) << 48) |
-            (getByteAsLong(innerIndex + 7) << 56)
+        (data(innerIndex) & 0xff).toLong |
+            ((data(innerIndex + 1) & 0xff).toLong << 8) |
+            ((data(innerIndex + 2) & 0xff).toLong << 16) |
+            ((data(innerIndex + 3) & 0xff).toLong << 24) |
+            ((data(innerIndex + 4) & 0xff).toLong << 32) |
+            ((data(innerIndex + 5) & 0xff).toLong << 40) |
+            ((data(innerIndex + 6) & 0xff).toLong << 48) |
+            ((data(innerIndex + 7) & 0xff).toLong << 56)
     }
 
     def getBytes(index: Int, destArray: Array[Byte], destIndex: Int, length: Int): Unit = {
@@ -57,6 +56,22 @@ final class Slice(val data: Array[Byte], val length: Int, val offset: Int) exten
         val result = Array.fill(length)(0.toByte)
         Array.copy(data, innerIndex, result, 0, length)
         result
+    }
+
+    def getBytes(index: Int, destination: ByteBuffer) = {
+        val innerIndex = index + offset
+        destination.put(data, innerIndex, Math.min(destination.remaining(), length))
+    }
+
+    def getBytes(index: Int, out: OutputStream, length: Int) = {
+        val innerIndex = index + offset
+        out.write(data, innerIndex, length)
+    }
+
+    def setShort(index: Int, value: Int) = {
+        val innerIndex = index + offset
+        data(innerIndex) = value.toByte
+        data(innerIndex + 1) = (value >> 8).toByte
     }
 
     override def compareTo(slice: Slice): Int = {
