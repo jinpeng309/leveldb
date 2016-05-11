@@ -25,8 +25,20 @@ final class Slice(val data: Array[Byte], val length: Int, val offset: Int) exten
             (getByte(index + 3) << 24)
     }
 
-    override def compareTo(o: Slice): Int = {
-        1
+    override def compareTo(slice: Slice): Int = {
+        if (this.equals(slice)) {
+            0
+        } else {
+            val minLength = Math.min(length, slice.length)
+            for(i <- 0.until(minLength)){
+                val v1 = getByte(i)
+                val v2 = slice.getByte(i)
+                if(v1 != v2){
+                    return v1 - v2
+                }
+            }
+            length - slice.length
+        }
     }
 
 
