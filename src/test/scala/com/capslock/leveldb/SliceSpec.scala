@@ -40,5 +40,24 @@ class SliceSpec extends FlatSpec with Matchers with MockFactory {
         slice.getInt(0) shouldEqual Math.pow(2, 24)
     }
 
+    "Same slice " should " equal to each other" in {
+        val data1 = Array(0.toByte, 1.toByte)
+        val slice1 = Slice(data1)
+        val data2 = Array(0.toByte, 1.toByte)
+        val slice2 = Slice(data2)
+
+        slice1.equals(slice2) shouldBe true
+        slice2.equals(slice1) shouldBe true
+    }
+
+    "Same slice hashCode " should " equal to each other " in {
+        val data1 = Array(0.toByte, 1.toByte)
+        val slice1 = Slice(data1)
+        val data2 = Array(0.toByte, 1.toByte)
+        val slice2 = Slice(data2)
+
+        slice1.hashCode() shouldEqual slice2.hashCode()
+        slice2.hashCode() shouldEqual slice1.hashCode()
+    }
 }
 
