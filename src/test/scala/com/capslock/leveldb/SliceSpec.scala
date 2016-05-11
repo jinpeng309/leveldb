@@ -31,13 +31,19 @@ class SliceSpec extends FlatSpec with Matchers with MockFactory {
     "Slice getShort " should " from little endian" in {
         val data = Array(0.toByte, 1.toByte)
         val slice = Slice(data)
-        slice.getShort(0) shouldEqual Math.pow(2, 8)
+        assert(slice.getShort(0) == Math.pow(2, 8).toShort)
     }
 
     "Slice getInt " should "from little endian" in {
         val data = Array(0.toByte, 0.toByte, 0.toByte, 1.toByte)
         val slice = Slice(data)
-        slice.getInt(0) shouldEqual Math.pow(2, 24)
+        assert(slice.getInt(0) == Math.pow(2, 24).toLong)
+    }
+
+    "Slice getLong" should "from little endian" in {
+        val data = Array(0.toByte, 0.toByte, 0.toByte, 0.toByte, 0.toByte, 0.toByte, 0.toByte, 1.toByte)
+        val slice = Slice(data)
+        assert(slice.getLong(0) == Math.pow(2, 56).toLong)
     }
 
     "Same slice " should " equal to each other" in {
