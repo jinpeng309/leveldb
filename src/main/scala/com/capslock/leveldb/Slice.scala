@@ -135,6 +135,20 @@ final class Slice(val data: Array[Byte], val length: Int, val offset: Int) exten
         if (readLength == 0) -1 else readLength
     }
 
+    def copySlice(index: Int, length: Int): Slice = {
+        val innerIndex = index + offset
+        val copyData = Array.fill[Byte](length)(0)
+        data.copyToArray(copyData, innerIndex)
+        Slice(copyData)
+    }
+
+    def copyBytes(index: Int, length: Int): Array[Byte] = {
+        val innerIndex = index + offset
+        val copyData = Array.fill[Byte](length)(0)
+        data.copyToArray(copyData, innerIndex)
+        copyData
+    }
+
 
     override def compareTo(slice: Slice): Int = {
         if (this.equals(slice)) {
