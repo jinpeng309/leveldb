@@ -1,11 +1,39 @@
 package com.capslock.leveldb
 
-import java.io.{DataOutput, OutputStream}
+import java.io.{DataOutput, InputStream, OutputStream}
+import java.nio.ByteBuffer
+import java.nio.channels.FileChannel
 
 /**
  * Created by capslock.
  */
 abstract class SliceOutput extends OutputStream with DataOutput {
+    def reset
+
+    def size: Int
+
+    def writableBytes: Int
+
+    def isWritable: Boolean
+
+    def writeBytes(source: Slice)
+
+    def writeBytes(source: Slice, length: Int)
+
+    def writeBytes(source: Slice, index: Int, length: Int)
+
+    def writeBytes(source: Array[Byte])
+
+    def writeBytes(source: Array[Byte], sourceIndex: Int, length: Int)
+
+    def writeBytes(source: ByteBuffer)
+
+    def writeBytes(source: InputStream, length: Int)
+
+    def writeBytes(source: FileChannel, position: Int, length: Int)
+
+    def slice: Slice
+
     override def writeFloat(v: Float): Unit = throw new UnsupportedOperationException
 
     override def writeChars(s: String): Unit = throw new UnsupportedOperationException
