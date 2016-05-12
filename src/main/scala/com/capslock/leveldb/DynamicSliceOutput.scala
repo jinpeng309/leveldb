@@ -111,7 +111,6 @@ class DynamicSliceOutput(estimatedSize: Int) extends SliceOutput {
                 }
                 val result = Slice(newCapability)
                 result.setBytes(0, sliceData, 0, sliceData.length)
-                result
         }
     }
 }
