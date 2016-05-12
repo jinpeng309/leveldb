@@ -84,5 +84,5 @@ class BasicSliceOutput(sliceData: Slice) extends SliceOutput {
 
     override def isWritable: Boolean = writableBytes > 0
 
-    override def slice: Slice = slice.slice(0, size)
+    override def slice: Slice = sliceData.slice(0, size)
 }
