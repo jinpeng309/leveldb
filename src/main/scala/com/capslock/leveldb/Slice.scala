@@ -149,6 +149,10 @@ final class Slice(val data: Array[Byte], val length: Int, val offset: Int) exten
         copyData
     }
 
+    def slice(index: Int, length: Int): Slice = {
+        Slice(data, index, length)
+    }
+
 
     override def compareTo(slice: Slice): Int = {
         if (this.equals(slice)) {
