@@ -1,7 +1,8 @@
 package com.capslock.leveldb
 
-import java.io.OutputStream
+import java.io.{InputStream, OutputStream}
 import java.nio.ByteBuffer
+import java.nio.channels.FileChannel
 
 /**
  * Created by alvin.
@@ -94,6 +95,47 @@ final class Slice(val data: Array[Byte], val length: Int, val offset: Int) exten
         data(innerIndex + 7) = ((value >> 56) & 0xff).toByte
     }
 
+    def setByte(index: Int, value: Int) = {
+        val innerIndex = index + offset
+        data(innerIndex) = (value & 0xff).toByte
+    }
+
+    def setBytes(index: Int, source: Array[Byte], sourceIndex: Int, length: Int): Unit = {
+        val innerIndex = index + offset
+        System.arraycopy(source, sourceIndex, data, innerIndex, length)
+    }
+
+    def setBytes(index: Int, source: Slice, sourceIndex: Int, length: Int): Unit = {
+        setBytes(index, source.data, source.offset + sourceIndex, length)
+    }
+
+    def setBytes(index: Int, source: ByteBuffer): Unit = {
+        val innerIndex = index + offset
+        source.get(data, innerIndex, source.remaining)
+    }
+
+    def setBytes(index: Int, in: InputStream, length: Int): Int = {
+        val innerIndex = index + offset
+        var readLength = 0
+        Stream.continually(in.read(data, innerIndex, length)).takeWhile(length => {
+            readLength += length
+            length != -1
+        })
+        if (readLength == 0) -1 else readLength
+    }
+
+    def setBytes(index: Int, in: FileChannel, position: Int, length: Int): Int = {
+        val innerIndex = index + offset
+        val byteBuffer = ByteBuffer.wrap(data, innerIndex, length)
+        var readLength = 0
+        Stream.continually(in.read(byteBuffer, position)).takeWhile(length => {
+            readLength += length
+            length != -1
+        })
+        if (readLength == 0) -1 else readLength
+    }
+
+
     override def compareTo(slice: Slice): Int = {
         if (this.equals(slice)) {
             0
@@ -101,7 +143,7 @@ final class Slice(val data: Array[Byte], val length: Int, val offset: Int) exten
             val minLength = Math.min(length, slice.length)
             for (i <- 0.until(minLength)) {
                 val v1 = getByte(i)
-                val v2 = slice.getByte(i)
+                val v2 = data(i)
                 if (v1 != v2) {
                     return v1 - v2
                 }
