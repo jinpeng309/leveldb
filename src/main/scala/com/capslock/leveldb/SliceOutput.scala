@@ -32,6 +32,8 @@ abstract class SliceOutput extends OutputStream with DataOutput {
 
     def writeBytes(source: FileChannel, position: Int, length: Int)
 
+    def writeZero(length: Int): Unit
+
     def slice: Slice
 
     override def writeFloat(v: Float): Unit = throw new UnsupportedOperationException

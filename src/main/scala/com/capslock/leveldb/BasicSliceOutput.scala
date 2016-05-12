@@ -59,6 +59,25 @@ class BasicSliceOutput(sliceData: Slice) extends SliceOutput {
         size += writeSize
     }
 
+    override def writeZero(length: Int): Unit = {
+        if (length > 0) {
+            val nLong = length >>> 8
+            val nBytes = length & 7
+            for (i <- 0 until nLong) {
+                writeLong(0)
+            }
+            nBytes match {
+                case 4 => writeInt(0)
+                case _ if nBytes < 4 => for (i <- 0 until nBytes) writeByte(0)
+                case _ if nBytes > 4 =>
+                    writeInt(0)
+                    for (i <- 0 until (nBytes - 4)) {
+                        writeByte(0)
+                    }
+            }
+        }
+    }
+
     override def writeBytes(source: FileChannel, position: Int, length: Int): Unit = ???
 
     override def writableBytes: Int = sliceData.length - size
