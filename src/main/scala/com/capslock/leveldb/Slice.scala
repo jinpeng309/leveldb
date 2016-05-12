@@ -4,8 +4,8 @@ import java.io.OutputStream
 import java.nio.ByteBuffer
 
 /**
-  * Created by alvin.
-  */
+ * Created by alvin.
+ */
 final class Slice(val data: Array[Byte], val length: Int, val offset: Int) extends Comparable[Slice] {
     var hash = 0
 
@@ -72,6 +72,26 @@ final class Slice(val data: Array[Byte], val length: Int, val offset: Int) exten
         val innerIndex = index + offset
         data(innerIndex) = value.toByte
         data(innerIndex + 1) = (value >> 8).toByte
+    }
+
+    def setInt(index: Int, value: Int) = {
+        val innerIndex = index + offset
+        data(innerIndex) = value.toByte
+        data(innerIndex + 1) = ((value >> 8) & 0xff).toByte
+        data(innerIndex + 2) = ((value >> 16) & 0xff).toByte
+        data(innerIndex + 3) = ((value >> 24) & 0xff).toByte
+    }
+
+    def setLong(index: Int, value: Long) = {
+        val innerIndex = index + offset
+        data(innerIndex) = value.toByte
+        data(innerIndex + 1) = ((value >> 8) & 0xff).toByte
+        data(innerIndex + 2) = ((value >> 16) & 0xff).toByte
+        data(innerIndex + 3) = ((value >> 24) & 0xff).toByte
+        data(innerIndex + 4) = ((value >> 32) & 0xff).toByte
+        data(innerIndex + 5) = ((value >> 40) & 0xff).toByte
+        data(innerIndex + 6) = ((value >> 48) & 0xff).toByte
+        data(innerIndex + 7) = ((value >> 56) & 0xff).toByte
     }
 
     override def compareTo(slice: Slice): Int = {

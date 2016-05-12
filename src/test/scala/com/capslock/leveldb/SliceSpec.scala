@@ -4,8 +4,8 @@ import org.scalamock.scalatest.MockFactory
 import org.scalatest.{FlatSpec, _}
 
 /**
-  * Created by capslock.
-  */
+ * Created by capslock.
+ */
 class SliceSpec extends FlatSpec with Matchers with MockFactory {
 
     "Slice construct from a byte array " should " length and offset should be matched" in {
@@ -84,6 +84,27 @@ class SliceSpec extends FlatSpec with Matchers with MockFactory {
 
         assert(slice1.compareTo(slice2) == 0)
         assert(slice2.compareTo(slice1) == 0)
+    }
+
+    "setShort " should "equal to getShort" in {
+        val value: Short = 1111
+        val slice = Slice(2)
+        slice.setShort(0, value)
+        assert(slice.getShort(0) == value)
+    }
+
+    "setInt" should "equal to getInt" in {
+        val value: Int = 1111111111
+        val slice = Slice(4)
+        slice.setInt(0, value)
+        assert(slice.getInt(0) == value)
+    }
+
+    "setLong" should "equal to getLong" in {
+        val value: Long = 1111111111111111111L
+        val slice = Slice(8)
+        slice.setLong(0, value)
+        assert(slice.getLong(0) == value)
     }
 }
 
