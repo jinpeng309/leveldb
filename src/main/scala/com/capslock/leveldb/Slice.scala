@@ -7,7 +7,7 @@ import java.nio.channels.FileChannel
 /**
  * Created by alvin.
  */
-final class Slice(val data: Array[Byte], val length: Int, val offset: Int) extends Comparable[Slice] {
+final class Slice(val data: Array[Byte], val offset: Int, val length: Int) extends Comparable[Slice] {
     var hash = 0
 
     def getByte(index: Int): Byte = {
@@ -154,19 +154,19 @@ final class Slice(val data: Array[Byte], val length: Int, val offset: Int) exten
     }
 
 
-    override def compareTo(slice: Slice): Int = {
-        if (this.equals(slice)) {
+    override def compareTo(anotherSlice: Slice): Int = {
+        if (this.equals(anotherSlice)) {
             0
         } else {
-            val minLength = Math.min(length, slice.length)
+            val minLength = Math.min(length, anotherSlice.length)
             for (i <- 0.until(minLength)) {
                 val v1 = getByte(i)
-                val v2 = data(i)
+                val v2 = anotherSlice.getByte(i)
                 if (v1 != v2) {
                     return v1 - v2
                 }
             }
-            length - slice.length
+            length - anotherSlice.length
         }
     }
 
@@ -196,14 +196,14 @@ final class Slice(val data: Array[Byte], val length: Int, val offset: Int) exten
 
 object Slice {
     def apply(length: Int): Slice = {
-        new Slice(Array.fill(length)(0), length, 0)
+        new Slice(Array.fill(length)(0), 0, length)
     }
 
     def apply(data: Array[Byte]): Slice = {
-        new Slice(data, data.length, 0)
+        new Slice(data, 0, data.length)
     }
 
-    def apply(data: Array[Byte], length: Int, offset: Int) = {
-        new Slice(data, length, offset)
+    def apply(data: Array[Byte], offset: Int, length: Int) = {
+        new Slice(data, offset, length)
     }
 }

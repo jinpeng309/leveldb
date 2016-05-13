@@ -22,7 +22,7 @@ class SliceSpec extends FlatSpec with Matchers with MockFactory {
         slice2.length shouldEqual len
         slice2.offset shouldEqual 0
 
-        val slice3 = Slice(Array.fill(len)(0), len, offset)
+        val slice3 = Slice(Array.fill(len)(0), offset, len)
         slice3.data.length shouldEqual len
         slice3.length shouldEqual len
         slice3.offset shouldEqual offset
