@@ -12,6 +12,7 @@ import com.capslock.leveldb.SizeOf._
 class BlockIterator(data: SliceInput, restartPositions: Slice, comparator: Comparator[Slice]) extends SeekingIterator[Slice, Slice] {
     val restartCount = restartPositions.length / SIZE_OF_INT
     var nextEntry = Option.empty[BlockEntry]
+    seekToFirst()
 
     override def seekToFirst(): Unit = {
         if (restartCount > 0) {
@@ -88,8 +89,6 @@ object BlockIterator {
     type BlockEntry = (Slice, Slice)
 
     def apply(data: Slice, restartPosition: Slice, comparator: Comparator[Slice]): BlockIterator = {
-        val result = new BlockIterator(SliceInput(data), restartPosition.slice(), comparator)
-        result.seekToFirst()
-        result
+        new BlockIterator(SliceInput(data), restartPosition.slice(), comparator)
     }
 }

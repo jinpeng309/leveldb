@@ -199,6 +199,8 @@ final class Slice(val data: Array[Byte], val offset: Int, val length: Int) exten
 }
 
 object Slice {
+    def empty = Slice(0)
+
     def apply(length: Int): Slice = {
         new Slice(Array.fill(length)(0), 0, length)
     }
