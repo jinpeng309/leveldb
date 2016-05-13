@@ -102,7 +102,6 @@ class DynamicSliceOutput(estimatedSize: Int) extends SliceOutput {
 
     def ensureSize(minWritableSize: Int): Unit = {
         sliceData.length match {
-            case _ if sliceData.length >= minWritableSize => slice
             case _ if sliceData.length < minWritableSize =>
                 val minCapability = sliceData.length + minWritableSize
                 var newCapability = if (sliceData.length == 0) 1 else sliceData.length
