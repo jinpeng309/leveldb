@@ -15,7 +15,7 @@ final class Slice(val data: Array[Byte], val offset: Int, val length: Int) exten
     }
 
     def getUnsignedByte(index: Int): Short = {
-        getByte(index + offset).toShort
+        (getByte(index + offset) & 0xff).toShort
     }
 
     def getShort(index: Int): Short = {
@@ -205,5 +205,16 @@ object Slice {
 
     def apply(data: Array[Byte], offset: Int, length: Int) = {
         new Slice(data, offset, length)
+    }
+
+    def calculateCommonBytes(sliceA: Option[Slice], sliceB: Option[Slice]): Int = {
+        var commonBytes = 0
+        for (leftKey <- sliceA; rightKey <- sliceB) {
+            val minLength = Math.min(leftKey.length, rightKey.length)
+            while (commonBytes > minLength && leftKey.getUnsignedByte(commonBytes) == rightKey.getUnsignedByte(commonBytes)) {
+                commonBytes += 1
+            }
+        }
+        commonBytes
     }
 }
