@@ -150,7 +150,11 @@ final class Slice(val data: Array[Byte], val offset: Int, val length: Int) exten
     }
 
     def slice(index: Int, length: Int): Slice = {
-        Slice(data, index, length)
+        Slice(data, offset + index, length)
+    }
+
+    def slice(): Slice = {
+        slice(0, length)
     }
 
 

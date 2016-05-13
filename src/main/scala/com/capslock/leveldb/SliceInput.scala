@@ -91,3 +91,9 @@ final class SliceInput(slice: Slice) extends InputStream with DataInput {
 
     override def readUnsignedByte(): Int = readByte & 0xff
 }
+
+object SliceInput{
+    def apply(data: Slice): SliceInput = {
+        new SliceInput(data)
+    }
+}
