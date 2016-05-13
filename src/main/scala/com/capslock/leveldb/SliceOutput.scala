@@ -5,10 +5,10 @@ import java.nio.ByteBuffer
 import java.nio.channels.FileChannel
 
 /**
- * Created by capslock.
- */
+  * Created by capslock.
+  */
 abstract class SliceOutput extends OutputStream with DataOutput {
-    def reset
+    def reset()
 
     def size: Int
 
@@ -34,7 +34,7 @@ abstract class SliceOutput extends OutputStream with DataOutput {
 
     def writeZero(length: Int): Unit
 
-    def slice: Slice
+    def slice(): Slice
 
     override def writeFloat(v: Float): Unit = throw new UnsupportedOperationException
 

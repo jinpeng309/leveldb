@@ -11,7 +11,7 @@ class DynamicSliceOutput(estimatedSize: Int) extends SliceOutput {
     var size = 0
     var sliceData = Slice(estimatedSize)
 
-    override def reset: Unit = size = 0
+    override def reset(): Unit = size = 0
 
     override def writeBytes(source: Slice): Unit = writeBytes(source, 0, source.length)
 
