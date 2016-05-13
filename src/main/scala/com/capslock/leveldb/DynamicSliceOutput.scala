@@ -114,3 +114,9 @@ class DynamicSliceOutput(estimatedSize: Int) extends SliceOutput {
         }
     }
 }
+
+object DynamicSliceOutput {
+    def apply(estimatedSize: Int): DynamicSliceOutput = {
+        new DynamicSliceOutput(estimatedSize)
+    }
+}

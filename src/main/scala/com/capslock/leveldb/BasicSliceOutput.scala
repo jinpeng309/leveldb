@@ -86,3 +86,9 @@ class BasicSliceOutput(sliceData: Slice) extends SliceOutput {
 
     override def slice: Slice = sliceData.slice(0, size)
 }
+
+object BasicSliceOutput {
+    def apply(slice: Slice): BasicSliceOutput = {
+        new BasicSliceOutput(slice)
+    }
+}
