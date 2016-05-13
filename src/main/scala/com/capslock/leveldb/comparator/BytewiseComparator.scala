@@ -9,7 +9,7 @@ class BytewiseComparator extends UserComparator {
     override def name: String = "leveldb.BytewiseComparator"
 
     override def findShortSuccessor(key: Slice): Slice = {
-        0.to(key.length - 1).find(index => key.getUnsignedByte(index) != 0xff).flatMap(index => {
+        0.until(key.length).find(index => key.getUnsignedByte(index) != 0xff).flatMap(index => {
             val value = key.getUnsignedByte(index)
             val result = key.copySlice(0, index + 1)
             result.setByte(index, value + 1)
