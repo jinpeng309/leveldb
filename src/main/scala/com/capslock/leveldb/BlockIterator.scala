@@ -2,6 +2,7 @@ package com.capslock.leveldb
 
 import java.util.{Comparator, NoSuchElementException}
 
+import com.capslock.leveldb.BlockIterator.BlockEntry
 import com.capslock.leveldb.SizeOf._
 
 /**
@@ -26,7 +27,7 @@ class BlockIterator(data: SliceInput, restartPositions: Slice, comparator: Compa
             while (left < right) {
                 val mid = (left + right + 1) / 2
                 seekToRestartPosition(mid)
-                if (comparator.compare(peek().key, targetKey) < 0) {
+                if (comparator.compare(peek()._1, targetKey) < 0) {
                     left = mid
                 } else {
                     right = mid - 1
@@ -34,7 +35,7 @@ class BlockIterator(data: SliceInput, restartPositions: Slice, comparator: Compa
             }
             seekToRestartPosition(left)
             while (hasNext) {
-                if (comparator.compare(peek().key, targetKey) >= 0) {
+                if (comparator.compare(peek()._1, targetKey) >= 0) {
                     return
                 }
                 next()
@@ -54,7 +55,7 @@ class BlockIterator(data: SliceInput, restartPositions: Slice, comparator: Compa
 
     override def peek(): BlockEntry = nextEntry match {
         case Some(entry) => entry
-        case None => throw NoSuchElementException
+        case None => throw new NoSuchElementException
     }
 
     override def hasNext: Boolean = nextEntry.isDefined
@@ -74,17 +75,17 @@ class BlockIterator(data: SliceInput, restartPositions: Slice, comparator: Compa
         val key = Slice(sharedKeyLength + nonSharedKeyLength)
         val keyWriter = BasicSliceOutput(key)
         for (pre <- preEntry; if sharedKeyLength > 0) {
-            keyWriter.writeBytes(pre.key, 0, sharedKeyLength)
+            keyWriter.writeBytes(pre._1, 0, sharedKeyLength)
         }
         keyWriter.writeBytes(data, nonSharedKeyLength)
         val value = data.readBytes(valueLength)
-        Some(BlockEntry(key, value))
+        Some((key, value))
     }
 }
 
-case class BlockEntry(key: Slice, value: Slice)
 
 object BlockIterator {
+    type BlockEntry = (Slice, Slice)
 
     def apply(data: Slice, restartPosition: Slice, comparator: Comparator[Slice]): BlockIterator = {
         val result = new BlockIterator(SliceInput(data), restartPosition.slice(), comparator)
