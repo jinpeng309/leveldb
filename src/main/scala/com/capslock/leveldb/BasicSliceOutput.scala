@@ -5,8 +5,8 @@ import java.nio.ByteBuffer
 import java.nio.channels.FileChannel
 
 /**
- * Created by capslock.
- */
+  * Created by capslock.
+  */
 class BasicSliceOutput(sliceData: Slice) extends SliceOutput {
     var size = 0
 
@@ -59,6 +59,13 @@ class BasicSliceOutput(sliceData: Slice) extends SliceOutput {
         size += writeSize
     }
 
+    override def writeBytes(source: SliceInput, length: Int) : Unit = {
+        if (length > source.available) {
+            throw new IndexOutOfBoundsException
+        }
+        writeBytes(source.readBytes(length))
+    }
+
     override def writeZero(length: Int): Unit = {
         if (length > 0) {
             val nLong = length >>> 8
@@ -78,13 +85,16 @@ class BasicSliceOutput(sliceData: Slice) extends SliceOutput {
         }
     }
 
-    override def writeBytes(source: FileChannel, position: Int, length: Int): Unit = ???
+    override def writeBytes(source: FileChannel, position: Int, length: Int): Unit = {
+        val len = sliceData.setBytes(size, source, position, length)
+        size += len
+    }
 
     override def writableBytes: Int = sliceData.length - size
 
     override def isWritable: Boolean = writableBytes > 0
 
-    override def slice: Slice = sliceData.slice(0, size)
+    override def slice(): Slice = sliceData.slice(0, size)
 }
 
 object BasicSliceOutput {

@@ -5,8 +5,8 @@ import java.nio.ByteBuffer
 import java.nio.channels.FileChannel
 
 /**
-  * Created by capslock.
-  */
+ * Created by capslock.
+ */
 abstract class SliceOutput extends OutputStream with DataOutput {
     def reset()
 
@@ -31,6 +31,8 @@ abstract class SliceOutput extends OutputStream with DataOutput {
     def writeBytes(source: InputStream, length: Int)
 
     def writeBytes(source: FileChannel, position: Int, length: Int)
+
+    def writeBytes(source: SliceInput, length: Int)
 
     def writeZero(length: Int): Unit
 

@@ -54,7 +54,7 @@ class DynamicSliceOutput(estimatedSize: Int) extends SliceOutput {
 
     override def isWritable: Boolean = writableBytes > 0
 
-    override def slice: Slice = sliceData.slice(0, size)
+    override def slice(): Slice = sliceData.slice(0, size)
 
     override def writeZero(length: Int): Unit = {
         if (length > 0) {
@@ -112,6 +112,11 @@ class DynamicSliceOutput(estimatedSize: Int) extends SliceOutput {
                 val result = Slice(newCapability)
                 result.setBytes(0, sliceData, 0, sliceData.length)
         }
+    }
+
+    override def writeBytes(source: SliceInput, length: Int): Unit = {
+        ensureSize(size + length)
+        writeBytes(source.readBytes(length))
     }
 }
 
