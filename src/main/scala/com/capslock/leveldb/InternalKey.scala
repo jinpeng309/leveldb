@@ -1,6 +1,7 @@
 package com.capslock.leveldb
 
 import com.capslock.leveldb.SizeOf._
+import com.capslock.leveldb.ValueType.ValueType
 
 /**
  * Created by capslock.

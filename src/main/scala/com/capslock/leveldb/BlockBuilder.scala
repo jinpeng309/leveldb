@@ -48,6 +48,7 @@ class BlockBuilder(estimate: Int, blockRestartInterval: Int, comparator: Compara
         VariableLengthQuantity.writeVariableLengthInt(sharedKeyBytes, block)
         VariableLengthQuantity.writeVariableLengthInt(nonSharedKeyBytes, block)
         VariableLengthQuantity.writeVariableLengthInt(value.length, block)
+        import CompressionType._
 
         block.writeBytes(key, sharedKeyBytes, nonSharedKeyBytes)
         block.writeBytes(value, 0, value.length)

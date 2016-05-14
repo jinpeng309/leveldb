@@ -1,11 +1,13 @@
 package com.capslock.leveldb
 
+import com.capslock.leveldb.ValueType.ValueType
+
 /**
  * Created by capslock.
  */
 object SequenceNumber {
     def packSequenceAndValueType(sequenceNumber: Long, valueType: ValueType): Long = {
-        sequenceNumber << 8 | ValueType.toByte(valueType)
+        sequenceNumber << 8 | valueType.id
     }
 
     def unpackSequenceNumber(packedData: Long): Long = {
@@ -13,6 +15,6 @@ object SequenceNumber {
     }
 
     def unpackValueType(packedData: Long): ValueType = {
-        ValueType.fromByte(packedData.toByte)
+        ValueType(packedData.toInt)
     }
 }

@@ -1,6 +1,6 @@
 package com.capslock.leveldb.comparator
 
-import com.capslock.leveldb.{InternalKey, Slice, VALUE}
+import com.capslock.leveldb.{InternalKey, Slice}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{FlatSpec, Matchers}
 
@@ -9,6 +9,7 @@ import org.scalatest.{FlatSpec, Matchers}
  */
 class InternalKeyComparatorSpec extends FlatSpec with Matchers with MockFactory {
     "compare two internalKey when userKey is equal result " should "dependent on sequenceNumber " in {
+        import com.capslock.leveldb.ValueType._
         val slice = Slice(3)
         val key1 = InternalKey(slice, 1, VALUE)
         val key2 = InternalKey(slice, 2, VALUE)
