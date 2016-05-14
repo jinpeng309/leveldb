@@ -13,5 +13,7 @@ class Block(block: Slice, comparator: Comparator[Slice]) extends SeekingIterable
     val data = if (restartCount > 0) block.slice(0, restartOffset) else Slice.empty
     val restartPositions = if (restartCount > 0) block.slice(restartOffset, restartCount * SIZE_OF_INT) else Slice.empty
 
+    def size = data.length
+
     override def iterator(): SeekingIterator[Slice, Slice] = BlockIterator(data, restartPositions, comparator)
 }

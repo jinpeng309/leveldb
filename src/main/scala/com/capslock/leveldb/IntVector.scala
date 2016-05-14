@@ -10,10 +10,15 @@ class IntVector(capability: Int) {
 
     def size = values.size
 
-    def clear = values.clear()
+    def clear() = values.clear()
 
     def add(value: Int) = values += value
 
     def write(sliceOutput: SliceOutput) = values.foreach(value => sliceOutput.writeInt(value))
+}
 
+object IntVector{
+    def apply(capability: Int) : IntVector = {
+        new IntVector(capability)
+    }
 }
