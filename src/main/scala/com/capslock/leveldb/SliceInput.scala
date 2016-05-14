@@ -31,7 +31,6 @@ final class SliceInput(slice: Slice) extends InputStream with DataInput {
     }
 
     override def readInt = {
-
         val result = slice.getInt(position)
         position += 4
         result
