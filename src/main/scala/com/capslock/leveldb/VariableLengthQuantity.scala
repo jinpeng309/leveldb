@@ -69,16 +69,16 @@ object VariableLengthQuantity {
     }
 
 
-    def readVariableLengthLong(sliceInput: SliceInput): Either[String, Int] = {
+    def readVariableLengthLong(sliceInput: SliceInput): Int = {
         var result = 0
         for (shift <- 0 until 63 by 7) {
             val b = sliceInput.readUnsignedByte()
             result |= ((b & 0x7f) << shift)
             if ((b & 0x80) == 0) {
-                return Right(result)
+                return result
             }
         }
-        Left("last byte of variable length int has high bit set")
+        throw new NumberFormatException("last byte of variable length int has high bit set")
     }
 
 }
