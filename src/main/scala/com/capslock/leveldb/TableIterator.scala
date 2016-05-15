@@ -44,3 +44,9 @@ class TableIterator(table: Table, blockIterator: BlockIterator) extends Abstract
 
     }
 }
+
+object TableIterator{
+    def apply(table: Table, blockIterator: BlockIterator):TableIterator = {
+        new TableIterator(table,blockIterator)
+    }
+}

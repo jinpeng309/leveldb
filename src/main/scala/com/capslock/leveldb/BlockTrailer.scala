@@ -8,6 +8,7 @@ import com.capslock.leveldb.CompressionType.CompressionType
 case class BlockTrailer(crc32c: Int, compressionType: CompressionType)
 
 object BlockTrailer {
+    val ENCODE_LENGTH = 5
     def readBlockTrailer(slice: Slice): BlockTrailer = {
         val sliceInput = SliceInput(slice)
         val compressionType = CompressionType(sliceInput.readUnsignedByte())

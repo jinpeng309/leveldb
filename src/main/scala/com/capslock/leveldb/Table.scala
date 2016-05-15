@@ -1,5 +1,6 @@
 package com.capslock.leveldb
 
+import java.nio.ByteBuffer
 import java.nio.channels.FileChannel
 import java.util.Comparator
 
@@ -27,9 +28,21 @@ abstract class Table(name: String, fileChannel: FileChannel, comparator: Compara
         }
     }
 
+    def uncompressedLength(data: ByteBuffer): Int = {
+        VariableLengthQuantity.readVariableLengthInt(data.duplicate())
+    }
+
     def closer: () => Unit = {
         () => {
             fileChannel.close()
+        }
+    }
+
+    @throws(classOf[IllegalStateException])
+    override def iterator(): SeekingIterator[Slice, Slice] = {
+        indexBlock match {
+            case Some(block) => TableIterator(this, indexBlock.get.iterator())
+            case _ => throw new IllegalStateException("Empty index block, may some err in reading file")
         }
     }
 }

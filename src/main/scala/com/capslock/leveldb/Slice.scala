@@ -1,8 +1,8 @@
 package com.capslock.leveldb
 
 import java.io.{InputStream, OutputStream}
-import java.nio.ByteBuffer
 import java.nio.channels.FileChannel
+import java.nio.{ByteBuffer, ByteOrder}
 
 /**
  * Created by alvin.
@@ -211,6 +211,19 @@ object Slice {
 
     def apply(data: Array[Byte], offset: Int, length: Int) = {
         new Slice(data, offset, length)
+    }
+
+    def copiedBuffer(source: ByteBuffer, offset: Int, length: Int): Slice = {
+        val newPosition = source.position() + offset
+        copiedBuffer(source.duplicate().order(ByteOrder.LITTLE_ENDIAN).clear().limit(newPosition + length)
+            .position(newPosition).asInstanceOf[ByteBuffer])
+    }
+
+
+    def copiedBuffer(source: ByteBuffer): Slice = {
+        val copy = Slice(source.limit() - source.position())
+        copy.setBytes(0, source.duplicate().order(ByteOrder.LITTLE_ENDIAN))
+        copy
     }
 
     def calculateCommonBytes(sliceA: Option[Slice], sliceB: Option[Slice]): Int = {

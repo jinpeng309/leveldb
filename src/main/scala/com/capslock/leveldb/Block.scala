@@ -17,3 +17,9 @@ class Block(block: Slice, comparator: Comparator[Slice]) extends SeekingIterable
 
     override def iterator(): BlockIterator = BlockIterator(data, restartPositions, comparator)
 }
+
+object Block {
+    def apply(block: Slice, comparator: Comparator[Slice]): Block = {
+        new Block(block, comparator)
+    }
+}
