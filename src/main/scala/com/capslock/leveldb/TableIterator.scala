@@ -27,6 +27,9 @@ class TableIterator(table: Table, blockIterator: BlockIterator) extends Abstract
             currentHasNext = if (current.isDefined) current.get.hasNext else false
             if (!currentHasNext) {
                 current = getNextBlock()
+                if(current.isEmpty){
+                    return Option.empty
+                }
             } else {
                 return current.map(blockIterator => blockIterator.next())
             }

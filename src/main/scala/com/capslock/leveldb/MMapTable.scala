@@ -10,15 +10,22 @@ import java.util.Comparator
  */
 class MMapTable(name: String, fileChannel: FileChannel, comparator: Comparator[Slice], verifyChecksum: Boolean)
     extends Table(name, fileChannel, comparator, verifyChecksum) {
-    var data: MappedByteBuffer = {
+    val data: MappedByteBuffer = {
         val size = fileChannel.size()
         fileChannel.map(FileChannel.MapMode.READ_ONLY, 0, size)
     }
+    val footer = init()
+    val indexBlock = readBlock(footer.indexBlockHandle) match {
+        case Right(block) => Some(block)
+        case _ => None
+    }
+    val metaIndexBlockHandle = footer.metaIndexBlockHandle
+
 
     override def init(): Footer = {
-        Footer.readFooter(Slice.copiedBuffer(data))
+        val size = fileChannel.size()
+        Footer.readFooter(Slice.copiedBuffer(data, (size - Footer.MAX_ENCODE_LENGTH).toInt, Footer.MAX_ENCODE_LENGTH))
     }
-
 
     override def closer: () => Unit = {
         () => {
@@ -53,5 +60,13 @@ class MMapTable(name: String, fileChannel: FileChannel, comparator: Comparator[S
     def read(data: MappedByteBuffer, offset: Int, length: Int): ByteBuffer = {
         val newPosition: Int = data.position + offset
         data.duplicate.order(ByteOrder.LITTLE_ENDIAN).clear.limit(newPosition + length).position(newPosition).asInstanceOf[ByteBuffer]
+    }
+
+    @throws(classOf[IllegalStateException])
+    override def iterator(): TableIterator = {
+        indexBlock match {
+            case Some(block) => TableIterator(this, indexBlock.get.iterator())
+            case _ => throw new IllegalStateException("Empty index block, may some err in reading file")
+        }
     }
 }

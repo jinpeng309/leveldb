@@ -32,7 +32,7 @@ class BasicSliceOutput(sliceData: Slice) extends SliceOutput {
 
     override def reset(): Unit = size = 0
 
-    override def writeBytes(source: Slice): Unit = writeBytes(source, 0, slice.length)
+    override def writeBytes(source: Slice): Unit = writeBytes(source, 0, source.length)
 
     override def writeBytes(source: Slice, length: Int): Unit = writeBytes(source, 0, length)
 

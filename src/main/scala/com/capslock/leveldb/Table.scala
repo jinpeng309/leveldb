@@ -9,12 +9,7 @@ import java.util.Comparator
  */
 abstract class Table(name: String, fileChannel: FileChannel, comparator: Comparator[Slice], verifyChecksum: Boolean)
     extends SeekingIterable[Slice, Slice] {
-    val footer = init()
-    val indexBlock = readBlock(footer.indexBlockHandle) match {
-        case Right(block) => Some(block)
-        case _ => None
-    }
-    val metaIndexBlockHandle = footer.metaIndexBlockHandle
+
 
     def init(): Footer
 
@@ -38,11 +33,5 @@ abstract class Table(name: String, fileChannel: FileChannel, comparator: Compara
         }
     }
 
-    @throws(classOf[IllegalStateException])
-    override def iterator(): SeekingIterator[Slice, Slice] = {
-        indexBlock match {
-            case Some(block) => TableIterator(this, indexBlock.get.iterator())
-            case _ => throw new IllegalStateException("Empty index block, may some err in reading file")
-        }
-    }
+
 }
