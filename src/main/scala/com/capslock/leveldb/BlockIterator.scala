@@ -81,7 +81,6 @@ class BlockIterator(data: SliceInput, restartPositions: Slice, comparator: Compa
         }
         keyWriter.writeBytes(data, nonSharedKeyLength)
         val value = data.readBytes(valueLength)
-        println("key = " +BaseEncoding.base16().lowerCase().encode(key.data))
         Some((key, value))
     }
 }
