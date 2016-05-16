@@ -32,6 +32,6 @@ abstract class Table(name: String, fileChannel: FileChannel, comparator: Compara
             fileChannel.close()
         }
     }
-
+    override def iterator(): TableIterator
 
 }
