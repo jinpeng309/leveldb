@@ -21,18 +21,6 @@ class MMapLogWriter(file: File, fileNumber: Long) extends LogWriter {
     override def isClosed: Boolean = closed.get()
 
 
-    def newLogRecordHeader(logChunkType: LogChunkType, slice: Slice): Slice = {
-        //todo add crc32
-        val crc = 0
-        val slice = Slice(HEADER_SIZE)
-        val sliceOutput = BasicSliceOutput(slice)
-        sliceOutput.writeInt(crc)
-        sliceOutput.writeByte((slice.length & 0xff).toByte)
-        sliceOutput.writeByte((slice.length >>> 8).toByte)
-        sliceOutput.writeByte(logChunkType.id.toByte)
-        slice
-    }
-
     @throws(classOf[IOException])
     override def addRecord(record: Slice, force: Boolean): Unit = {
         require(!closed.get(), "Log has been closed")
@@ -83,6 +71,17 @@ class MMapLogWriter(file: File, fileNumber: Long) extends LogWriter {
         crc32.update(logChunkType.id)
         crc32.update(slice.data, slice.offset, slice.length)
         crc32.getMaskedValue
+    }
+
+    def newLogRecordHeader(logChunkType: LogChunkType, slice: Slice): Slice = {
+        val crc = getChunkChecksum(logChunkType, slice)
+        val header = Slice(HEADER_SIZE)
+        val sliceOutput = BasicSliceOutput(header)
+        sliceOutput.writeInt(crc)
+        sliceOutput.writeByte((slice.length & 0xff).toByte)
+        sliceOutput.writeByte((slice.length >>> 8).toByte)
+        sliceOutput.writeByte(logChunkType.id.toByte)
+        header
     }
 
     def ensureCapacity(bytes: Int) = {
