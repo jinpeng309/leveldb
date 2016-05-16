@@ -20,16 +20,6 @@ class MMapLogWriter(file: File, fileNumber: Long) extends LogWriter {
 
     override def isClosed: Boolean = closed.get()
 
-    def writeChunk(logChunkType: LogChunkType, slice: Slice) = {
-        require(!closed.get(), "Log has been closed")
-        val header = newLogRecordHeader(logChunkType, slice)
-        val buffer = mappedByteBuffer.get
-        ensureCapacity(HEADER_SIZE + slice.length)
-        header.getBytes(0, buffer)
-        slice.getBytes(0, buffer)
-
-        blockOffset += HEADER_SIZE + slice.length
-    }
 
     def newLogRecordHeader(logChunkType: LogChunkType, slice: Slice): Slice = {
         //todo add crc32
@@ -77,8 +67,26 @@ class MMapLogWriter(file: File, fileNumber: Long) extends LogWriter {
         } while (sliceInput.isReadable)
     }
 
+    def writeChunk(logChunkType: LogChunkType, slice: Slice) = {
+        require(!closed.get(), "Log has been closed")
+        val header = newLogRecordHeader(logChunkType, slice)
+        val buffer = mappedByteBuffer.get
+        ensureCapacity(HEADER_SIZE + slice.length)
+        header.getBytes(0, buffer)
+        slice.getBytes(0, buffer)
+
+        blockOffset += HEADER_SIZE + slice.length
+    }
+
+    def getChunkChecksum(logChunkType: LogChunkType, slice: Slice): Int = {
+        val crc32 = new PureJavaCrc32C
+        crc32.update(logChunkType.id)
+        crc32.update(slice.data, slice.offset, slice.length)
+        crc32.getMaskedValue
+    }
+
     def ensureCapacity(bytes: Int) = {
-        for (buffer <- mappedByteBuffer; if buffer.remaining()) {
+        for (buffer <- mappedByteBuffer; if buffer.remaining() > bytes) {
             fileOffset += buffer.position()
             unmap()
             mappedByteBuffer = Option(fileChannel.map(MapMode.READ_WRITE, fileOffset, MMapLogWriter.PAGE_SIZE))
