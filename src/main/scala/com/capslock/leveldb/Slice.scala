@@ -5,7 +5,7 @@ import java.nio.channels.FileChannel
 import java.nio.{ByteBuffer, ByteOrder}
 
 /**
- * Created by alvin.
+ * Created by capslock.
  */
 final class Slice(val data: Array[Byte], val offset: Int, val length: Int) extends Comparable[Slice] {
     var hash = 0

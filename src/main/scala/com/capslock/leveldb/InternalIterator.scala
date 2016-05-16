@@ -1,7 +1,7 @@
 package com.capslock.leveldb
 
 /**
- * Created by alvin.
+ * Created by capslock.
  */
 trait InternalIterator extends SeekingIterator[InternalKey, Slice] {
 

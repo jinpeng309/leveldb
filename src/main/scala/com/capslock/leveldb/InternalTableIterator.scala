@@ -1,7 +1,7 @@
 package com.capslock.leveldb
 
 /**
- * Created by alvin.
+ * Created by capslock.
  */
 class InternalTableIterator(tableIterator: TableIterator) extends AbstractSeekingIterator[InternalKey, Slice] with InternalIterator {
     override protected def seekToFirstInternal(): Unit = tableIterator.seekToFirst()

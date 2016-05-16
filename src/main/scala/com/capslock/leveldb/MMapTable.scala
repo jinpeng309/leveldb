@@ -29,9 +29,7 @@ class MMapTable(name: String, fileChannel: FileChannel, comparator: Comparator[S
 
     override def closer: () => Unit = {
         () => {
-            val unmapMethod = fileChannel.getClass.getDeclaredMethod("unmap", classOf[MappedByteBuffer])
-            unmapMethod.setAccessible(true)
-            unmapMethod.invoke(null, data)
+            ByteBufferSupport.unmap(data)
             fileChannel.close()
         }
     }

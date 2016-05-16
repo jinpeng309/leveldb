@@ -5,7 +5,7 @@ import java.io.{File, FileInputStream}
 import com.capslock.leveldb.comparator.UserComparator
 import org.feijoas.mango.common.cache.CacheBuilder
 
-import scala.util.Try
+import scala.util.{Success, Try}
 
 /**
  * Created by capslock.
@@ -22,6 +22,13 @@ class TableCache(databaseDir: File, tableCacheSize: Int, userComparator: UserCom
     }
 
     def newIterator(fileMetaData: FileMetaData): Try[InternalTableIterator] = newIterator(fileMetaData.fileNumber)
+
+    def getApproximateOffsetOf(file: FileMetaData, key: Slice): Long = {
+        getTable(file.fileNumber) match {
+            case Success(table) => table.getApproximateOffsetOf(key)
+            case _ => -1
+        }
+    }
 
     def evict(fileNumber: Long): Unit = cache.invalidate(fileNumber)
 }
