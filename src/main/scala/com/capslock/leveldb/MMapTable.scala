@@ -69,4 +69,19 @@ class MMapTable(name: String, fileChannel: FileChannel, comparator: Comparator[S
             case _ => throw new IllegalStateException("Empty index block, may some err in reading file")
         }
     }
+
+    override def getApproximateOffsetOf(key: Slice): Long = {
+        indexBlock match {
+            case Some(block) =>
+                val blockIterator = block.iterator()
+                blockIterator.seek(key)
+                if (iterator().hasNext) {
+                    val blockHandle = BlockHandle.readBlockHandle(SliceInput(iterator().next._2))
+                    blockHandle.offset
+                } else {
+                    metaIndexBlockHandle.offset
+                }
+            case _ => metaIndexBlockHandle.offset
+        }
+    }
 }

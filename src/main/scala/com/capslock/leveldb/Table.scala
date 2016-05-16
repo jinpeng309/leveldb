@@ -10,7 +10,6 @@ import java.util.Comparator
 abstract class Table(name: String, fileChannel: FileChannel, comparator: Comparator[Slice], verifyChecksum: Boolean)
     extends SeekingIterable[Slice, Slice] {
 
-
     def init(): Footer
 
     def readBlock(blockHandle: BlockHandle): Either[Exception, Block]
@@ -32,6 +31,9 @@ abstract class Table(name: String, fileChannel: FileChannel, comparator: Compara
             fileChannel.close()
         }
     }
+
+    def getApproximateOffsetOf(key: Slice): Long
+
     override def iterator(): TableIterator
 
 }
