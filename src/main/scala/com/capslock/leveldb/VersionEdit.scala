@@ -1,8 +1,8 @@
 package com.capslock.leveldb
 
-import com.google.common.collect.{ArrayListMultimap, Multimap}
 
 import scala.collection.immutable.TreeMap
+import scala.collection.mutable
 
 /**
  * Created by capslock.
@@ -14,23 +14,19 @@ class VersionEdit {
     var previousLogNumber: Option[Long] = None
     var lastSequenceNumber: Option[Long] = None
     var compactPointers = TreeMap[Int, InternalKey]()
-    val newFiles = ArrayListMultimap.create[Integer, FileMetaData]()
-    val deleteFiles = ArrayListMultimap.create[Integer, Long]()
+    val newFiles = new mutable.HashMap[Int, List[FileMetaData]] with mutable.MultiMap[Int, FileMetaData]
+    val deleteFiles = new mutable.HashMap[Int, List[Int]] with mutable.MultiMap[Int, Long]
 
     def addFile(level: Int, fileMetaData: FileMetaData): Unit = {
-        newFiles.put(level, fileMetaData)
+        newFiles.addBinding(level, fileMetaData)
     }
 
     def addFile(level: Int, fileNumber: Long, fileSize: Long, smallest: InternalKey, largest: InternalKey): Unit = {
         addFile(level, FileMetaData(fileNumber, fileSize, smallest, largest))
     }
 
-    def addFiles(files: Multimap[Integer, FileMetaData]): Unit = {
-        newFiles.putAll(files)
-    }
-
     def deleteFile(level: Int, fileNumber: Long): Unit = {
-        deleteFiles.put(level, fileNumber)
+        deleteFiles.addBinding(level, fileNumber)
     }
 
     def setCompactPoint(level: Int, internalKey: InternalKey): Unit = {
