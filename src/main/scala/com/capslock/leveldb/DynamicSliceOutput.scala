@@ -2,7 +2,7 @@ package com.capslock.leveldb
 
 import java.io.InputStream
 import java.nio.ByteBuffer
-import java.nio.channels.FileChannel
+import java.nio.channels.{FileChannel, ScatteringByteChannel}
 
 /**
  * Created by capslock.
@@ -116,6 +116,11 @@ class DynamicSliceOutput(estimatedSize: Int) extends SliceOutput {
     override def writeBytes(source: SliceInput, length: Int): Unit = {
         ensureSize(size + length)
         writeBytes(source.readBytes(length))
+    }
+
+    override def writeBytes(source: ScatteringByteChannel, length: Int): Unit = {
+        ensureSize(size + length)
+        sliceData.setBytes(size, source, length)
     }
 }
 

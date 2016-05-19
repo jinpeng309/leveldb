@@ -1,7 +1,7 @@
 package com.capslock.leveldb
 
 import java.io.{InputStream, OutputStream}
-import java.nio.channels.FileChannel
+import java.nio.channels.{FileChannel, ScatteringByteChannel}
 import java.nio.{ByteBuffer, ByteOrder}
 
 /**
@@ -135,11 +135,27 @@ final class Slice(val data: Array[Byte], val offset: Int, val length: Int) exten
         if (readLength == 0) -1 else readLength
     }
 
+    def setBytes(index: Int, in: ScatteringByteChannel, length: Int): Int = {
+        val innerIndex = index + offset
+        val byteBuffer = ByteBuffer.wrap(data, innerIndex, length)
+        var readLength = 0
+        Stream.continually(in.read(byteBuffer)).takeWhile(length => {
+            readLength += length
+            length != -1
+        })
+        if (readLength == 0) -1 else readLength
+
+    }
+
     def copySlice(index: Int, length: Int): Slice = {
         val innerIndex = index + offset
         val copyData = Array.fill[Byte](length)(0)
         data.copyToArray(copyData, innerIndex)
         Slice(copyData)
+    }
+
+    def copySlice(): Slice = {
+        copySlice(0, length)
     }
 
     def copyBytes(index: Int, length: Int): Array[Byte] = {

@@ -66,12 +66,7 @@ class MMapLogWriter(file: File, fileNumber: Long) extends LogWriter {
         blockOffset += HEADER_SIZE + slice.length
     }
 
-    def getChunkChecksum(logChunkType: LogChunkType, slice: Slice): Int = {
-        val crc32 = new PureJavaCrc32C
-        crc32.update(logChunkType.id)
-        crc32.update(slice.data, slice.offset, slice.length)
-        crc32.getMaskedValue
-    }
+
 
     def newLogRecordHeader(logChunkType: LogChunkType, slice: Slice): Slice = {
         val crc = getChunkChecksum(logChunkType, slice)

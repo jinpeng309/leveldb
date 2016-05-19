@@ -2,7 +2,7 @@ package com.capslock.leveldb
 
 import java.io.{DataOutput, InputStream, OutputStream}
 import java.nio.ByteBuffer
-import java.nio.channels.FileChannel
+import java.nio.channels.{ScatteringByteChannel, FileChannel}
 
 /**
  * Created by capslock.
@@ -33,6 +33,8 @@ abstract class SliceOutput extends OutputStream with DataOutput {
     def writeBytes(source: FileChannel, position: Int, length: Int)
 
     def writeBytes(source: SliceInput, length: Int)
+
+    def writeBytes(source: ScatteringByteChannel, length: Int)
 
     def writeZero(length: Int): Unit
 
