@@ -35,6 +35,10 @@ class VersionEdit {
 }
 
 object VersionEdit {
+    def apply():VersionEdit = {
+        new VersionEdit
+    }
+
     def apply(slice: Slice): VersionEdit = {
         val sliceInput = SliceInput(slice)
         val versionEdit = new VersionEdit
@@ -47,7 +51,7 @@ object VersionEdit {
         versionEdit
     }
 
-    implicit class VersionEditToSlice(versionEdit: VersionEdit) {
+    implicit class VersionEditToSliceImplicit(versionEdit: VersionEdit) {
         def toSlice: Slice = {
             val sliceOutput = DynamicSliceOutput(4096)
             VersionEditTag.values.foreach(tag => tag.writeValue(sliceOutput, versionEdit))

@@ -53,6 +53,11 @@ class MMapLogWriter(file: File, fileNumber: Long) extends LogWriter {
             begin = false
 
         } while (sliceInput.isReadable)
+
+
+        for(buffer <- mappedByteBuffer; force){
+            buffer.force()
+        }
     }
 
     def writeChunk(logChunkType: LogChunkType, slice: Slice) = {
@@ -65,7 +70,6 @@ class MMapLogWriter(file: File, fileNumber: Long) extends LogWriter {
 
         blockOffset += HEADER_SIZE + slice.length
     }
-
 
 
     def newLogRecordHeader(logChunkType: LogChunkType, slice: Slice): Slice = {
@@ -123,5 +127,10 @@ class MMapLogWriter(file: File, fileNumber: Long) extends LogWriter {
 }
 
 object MMapLogWriter {
+
+    def apply(file: File, fileNumber: Long): MMapLogWriter = {
+        new MMapLogWriter(file, fileNumber)
+    }
+
     val PAGE_SIZE = 1024 * 1024
 }
