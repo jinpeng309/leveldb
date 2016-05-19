@@ -33,3 +33,26 @@ class VersionEdit {
         compactPointers += (level -> internalKey)
     }
 }
+
+object VersionEdit {
+    def apply(slice: Slice): VersionEdit = {
+        val sliceInput = SliceInput(slice)
+        val versionEdit = new VersionEdit
+        while (sliceInput.isReadable) {
+            val persistentId = VariableLengthQuantity.readVariableLengthInt(sliceInput)
+            for (tag <- VersionEditTag.getVersionEditTagByPersistentId(persistentId)) {
+                tag.readValue(sliceInput, versionEdit)
+            }
+        }
+        versionEdit
+    }
+
+    implicit class VersionEditToSlice(versionEdit: VersionEdit) {
+        def toSlice: Slice = {
+            val sliceOutput = DynamicSliceOutput(4096)
+            VersionEditTag.values.foreach(tag => tag.writeValue(sliceOutput, versionEdit))
+            sliceOutput.slice()
+        }
+    }
+
+}

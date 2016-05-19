@@ -164,5 +164,7 @@ object VersionEditTag {
         }
     }
 
+    val values = Seq(COMPACT_POINTER, LOG_NUMBER, PREVIOUS_LOG_NUMBER, NEXT_FILE_NUMBER, LAST_SEQUENCE,
+        COMPACT_POINTER, DELETED_FILE, NEW_FILE)
 }
 
