@@ -20,8 +20,8 @@ class VersionSet(val databaseDir: File, val tableCache: TableCache, val internal
     var preLogNumber: Long = 0
     val compactPointers = TreeMap[Int, InternalKey]()
     private val activeVersions = new MapMaker().weakKeys.makeMap()[Version, Object]
-    var current: Version = new Version(this)
-    activeVersions.put(current, new Object)
+    var current: Option[Version] = Option(new Version(this))
+    activeVersions.put(current.get, new Object)
     var descriptorLog = Option.empty[LogWriter]
 
 
@@ -40,22 +40,53 @@ class VersionSet(val databaseDir: File, val tableCache: TableCache, val internal
                 manifestFileNumber)
             try {
                 writeSnapshot(logWriter)
-                logWriter.addRecord(edit.toSlice, false)
+                logWriter.addRecord(edit.toSlice, force = false)
             } finally {
                 logWriter.close()
             }
+            FileName.setCurrentFile(databaseDir, manifestFileNumber)
         }
     }
+
+    def destroy(): Unit = {
+        for (log <- descriptorLog) {
+            log.close()
+            descriptorLog = Option.empty
+        }
+
+        for (currentVersion <- current) {
+            currentVersion.release()
+            current = Option.empty
+        }
+    }
+
+    def appendVersion(version: Version): Unit = {
+        val previous = current
+        current = Option(version)
+        activeVersions.put(version, new Object)
+        for (previousVersion <- previous) {
+            previousVersion.release()
+        }
+    }
+
+    def removeVersion(version: Version): Unit = {
+        activeVersions.remove(version)
+    }
+
+
 
     private def writeSnapshot(logWriter: LogWriter): Unit = {
         val edit = VersionEdit()
         edit.comparatorName = Option(internalKeyComparator.name())
         edit.compactPointers = compactPointers
-        current.getFiles().foreach {
-            case (level, fileMetaDataList) =>
-                fileMetaDataList.foreach(fileMetaData => edit.addFile(level, fileMetaData))
+        for (currentVersion <- current) {
+            currentVersion.getFiles().foreach {
+                case (level, fileMetaDataList) =>
+                    fileMetaDataList.foreach(fileMetaData => edit.addFile(level, fileMetaData))
+            }
         }
-        logWriter.addRecord(edit.toSlice, false)
+
+        logWriter.addRecord(edit.toSlice, force = false)
     }
 }
 

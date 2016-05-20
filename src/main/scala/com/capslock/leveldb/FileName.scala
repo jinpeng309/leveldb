@@ -3,6 +3,8 @@ package com.capslock.leveldb
 import java.io.File
 
 import com.capslock.leveldb.FileType.FileType
+import com.google.common.base.Charsets
+import com.google.common.io.Files
 
 /**
  * Created by capslock.
@@ -24,6 +26,10 @@ object FileName {
         def toDescriptorFileName: String = {
             "MANIFEST-%06d".format(number)
         }
+
+        def toDatabaseTempFileName: String = {
+            "%06D.dbtmp".format(number)
+        }
     }
 
     implicit class FileToFileInfoImplicit(file: File) {
@@ -43,6 +49,22 @@ object FileName {
 
     val currentFileName = "CURRENT"
     val lockFile = "LOCK"
+
+    def setCurrentFile(databaseDir: File, descriptorNumber: Long): Boolean = {
+        val manifest = descriptorNumber.toDescriptorFileName
+        val temp = descriptorNumber.toDatabaseTempFileName
+
+        val tempFile = new File(databaseDir, temp)
+        Files.write(manifest + "\n", tempFile, Charsets.UTF_8)
+        val to = new File(databaseDir, currentFileName)
+        val renameResult = tempFile.renameTo(to)
+
+        if (!renameResult) {
+            tempFile.delete()
+            Files.write(manifest + "\n", to, Charsets.UTF_8)
+        }
+        renameResult
+    }
 }
 
 object FileType extends Enumeration {
