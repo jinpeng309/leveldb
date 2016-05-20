@@ -19,7 +19,7 @@ class VersionSet(val databaseDir: File, val tableCache: TableCache, val internal
     var logNumber: Long = 0
     var preLogNumber: Long = 0
     val compactPointers = TreeMap[Int, InternalKey]()
-    private val activeVersions = new MapMaker().weakKeys.makeMap()[Version, Object]
+    private val activeVersions = new MapMaker().weakKeys.makeMap[Version, Object]()
     var current: Option[Version] = Option(new Version(this))
     activeVersions.put(current.get, new Object)
     var descriptorLog = Option.empty[LogWriter]
@@ -74,16 +74,16 @@ class VersionSet(val databaseDir: File, val tableCache: TableCache, val internal
     }
 
 
-
     private def writeSnapshot(logWriter: LogWriter): Unit = {
         val edit = VersionEdit()
         edit.comparatorName = Option(internalKeyComparator.name())
         edit.compactPointers = compactPointers
         for (currentVersion <- current) {
-            currentVersion.getFiles().foreach {
-                case (level, fileMetaDataList) =>
-                    fileMetaDataList.foreach(fileMetaData => edit.addFile(level, fileMetaData))
-            }
+            currentVersion.getFiles().foreach((entry: (Int, List[FileMetaData])) => {
+                val level = entry._1
+                val fileList = entry._2
+                fileList.foreach(file => edit.addFile(level, file))
+            })
         }
 
         logWriter.addRecord(edit.toSlice, force = false)

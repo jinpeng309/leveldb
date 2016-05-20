@@ -8,7 +8,7 @@ import com.google.common.primitives.Longs
 /**
  * Created by capslock.
  */
-class InternalKeyComparator(userComparator: UserComparator) extends Comparator[InternalKey] {
+class InternalKeyComparator(val userComparator: UserComparator) extends Comparator[InternalKey] {
     override def compare(leftKey: InternalKey, rightKey: InternalKey): Int = {
         val result = userComparator.compare(leftKey.userKey, rightKey.userKey)
         if (result != 0) {

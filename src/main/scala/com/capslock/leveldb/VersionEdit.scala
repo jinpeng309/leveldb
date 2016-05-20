@@ -1,8 +1,9 @@
 package com.capslock.leveldb
 
 
+import com.capslock.leveldb.ListMultiMap.ListMultiMapImplicit
+
 import scala.collection.immutable.TreeMap
-import scala.collection.mutable
 
 /**
  * Created by capslock.
@@ -14,11 +15,11 @@ class VersionEdit {
     var previousLogNumber: Option[Long] = None
     var lastSequenceNumber: Option[Long] = None
     var compactPointers = TreeMap[Int, InternalKey]()
-    val newFiles = new mutable.HashMap[Int, List[FileMetaData]] with mutable.MultiMap[Int, FileMetaData]
-    val deleteFiles = new mutable.HashMap[Int, List[Int]] with mutable.MultiMap[Int, Long]
+    var newFiles: Map[Int, List[FileMetaData]] = Map()
+    var deleteFiles: Map[Int, List[Long]] = Map()
 
     def addFile(level: Int, fileMetaData: FileMetaData): Unit = {
-        newFiles.addBinding(level, fileMetaData)
+        newFiles = newFiles.addBinding(level, fileMetaData)
     }
 
     def addFile(level: Int, fileNumber: Long, fileSize: Long, smallest: InternalKey, largest: InternalKey): Unit = {
@@ -26,7 +27,7 @@ class VersionEdit {
     }
 
     def deleteFile(level: Int, fileNumber: Long): Unit = {
-        deleteFiles.addBinding(level, fileNumber)
+        deleteFiles = deleteFiles.addBinding(level, fileNumber)
     }
 
     def setCompactPoint(level: Int, internalKey: InternalKey): Unit = {
@@ -35,7 +36,7 @@ class VersionEdit {
 }
 
 object VersionEdit {
-    def apply():VersionEdit = {
+    def apply(): VersionEdit = {
         new VersionEdit
     }
 
@@ -60,3 +61,4 @@ object VersionEdit {
     }
 
 }
+

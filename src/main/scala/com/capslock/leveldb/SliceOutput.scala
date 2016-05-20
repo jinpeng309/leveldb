@@ -34,7 +34,7 @@ abstract class SliceOutput extends OutputStream with DataOutput {
 
     def writeBytes(source: SliceInput, length: Int)
 
-    def writeBytes(source: ScatteringByteChannel, length: Int)
+    def writeBytes(source: ScatteringByteChannel, length: Int):Int
 
     def writeZero(length: Int): Unit
 

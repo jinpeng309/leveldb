@@ -118,7 +118,7 @@ class DynamicSliceOutput(estimatedSize: Int) extends SliceOutput {
         writeBytes(source.readBytes(length))
     }
 
-    override def writeBytes(source: ScatteringByteChannel, length: Int): Unit = {
+    override def writeBytes(source: ScatteringByteChannel, length: Int): Int = {
         ensureSize(size + length)
         sliceData.setBytes(size, source, length)
     }

@@ -103,17 +103,20 @@ case object COMPACT_POINTER extends VersionEditTag(5) {
 }
 
 case object DELETED_FILE extends VersionEditTag(6) {
-    override def readValue(sliceInput: SliceInput, versionEdit: VersionEdit): Unit = ???
+    override def readValue(sliceInput: SliceInput, versionEdit: VersionEdit): Unit = {
+
+    }
 
     override def writeValue(sliceOutput: SliceOutput, versionEdit: VersionEdit): Unit = {
-        versionEdit.deleteFiles.foreach {
-            case (level, fileNumberList) =>
-                fileNumberList.foreach(fileNumber => {
-                    VariableLengthQuantity.writeVariableLengthInt(persistentId, sliceOutput)
-                    VariableLengthQuantity.writeVariableLengthInt(level, sliceOutput)
-                    VariableLengthQuantity.writeVariableLengthLong(fileNumber, sliceOutput)
-                })
-        }
+        versionEdit.deleteFiles.foreach((entry: (Int, List[Long])) => {
+            val level = entry._1
+            val fileList = entry._2
+            fileList.foreach(fileNumber => {
+                VariableLengthQuantity.writeVariableLengthInt(persistentId, sliceOutput)
+                VariableLengthQuantity.writeVariableLengthInt(level, sliceOutput)
+                VariableLengthQuantity.writeVariableLengthLong(fileNumber, sliceOutput)
+            })
+        })
     }
 }
 
@@ -134,25 +137,26 @@ case object NEW_FILE extends VersionEditTag(7) {
 
     override def writeValue(sliceOutput: SliceOutput, versionEdit: VersionEdit): Unit = {
         import InternalKey.InternalKeyToSliceImplicit
-        versionEdit.newFiles.foreach {
-            case (level, fileMetaDataList) =>
-                fileMetaDataList.foreach(fileMetaData => {
-                    VariableLengthQuantity.writeVariableLengthInt(persistentId, sliceOutput)
-                    VariableLengthQuantity.writeVariableLengthInt(level, sliceOutput)
+        versionEdit.newFiles.foreach((entry: (Int, List[FileMetaData])) => {
+            val level = entry._1
+            val fileList = entry._2
+            fileList.foreach(fileMetaData => {
+                VariableLengthQuantity.writeVariableLengthInt(persistentId, sliceOutput)
+                VariableLengthQuantity.writeVariableLengthInt(level, sliceOutput)
 
-                    VariableLengthQuantity.writeVariableLengthLong(fileMetaData.fileNumber, sliceOutput)
-                    VariableLengthQuantity.writeVariableLengthLong(fileMetaData.fileSize, sliceOutput)
+                VariableLengthQuantity.writeVariableLengthLong(fileMetaData.fileNumber, sliceOutput)
+                VariableLengthQuantity.writeVariableLengthLong(fileMetaData.fileSize, sliceOutput)
 
-                    val smallestKeySlice = fileMetaData.smallest.toSlice
-                    val largestKeySlice = fileMetaData.largest.toSlice
+                val smallestKeySlice = fileMetaData.smallest.toSlice
+                val largestKeySlice = fileMetaData.largest.toSlice
 
-                    VariableLengthQuantity.writeVariableLengthInt(smallestKeySlice.length, sliceOutput)
-                    sliceOutput.writeBytes(smallestKeySlice)
+                VariableLengthQuantity.writeVariableLengthInt(smallestKeySlice.length, sliceOutput)
+                sliceOutput.writeBytes(smallestKeySlice)
 
-                    VariableLengthQuantity.writeVariableLengthInt(largestKeySlice.length, sliceOutput)
-                    sliceOutput.writeBytes(largestKeySlice)
-                })
-        }
+                VariableLengthQuantity.writeVariableLengthInt(largestKeySlice.length, sliceOutput)
+                sliceOutput.writeBytes(largestKeySlice)
+            })
+        })
     }
 }
 

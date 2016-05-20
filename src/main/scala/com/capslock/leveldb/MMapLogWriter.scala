@@ -55,8 +55,9 @@ class MMapLogWriter(file: File, fileNumber: Long) extends LogWriter {
         } while (sliceInput.isReadable)
 
 
-        for(buffer <- mappedByteBuffer; force){
-            buffer.force()
+        for (buffer <- mappedByteBuffer) {
+            if (force)
+                buffer.force()
         }
     }
 
