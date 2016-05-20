@@ -4,7 +4,7 @@ package com.capslock.leveldb
  * Created by capslock.
  */
 class LookupKey(val userKey: Slice, sequenceNumber: Long) {
-    val key = InternalKey(userKey, sequenceNumber, ValueType.VALUE)
+    val internalKey = InternalKey(userKey, sequenceNumber, ValueType.VALUE)
 }
 
 object LookupKey {

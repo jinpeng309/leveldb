@@ -18,6 +18,10 @@ class ReadStats(private var _seekFileLevel: Option[Int] = Option.empty,
     def seekFile_=(fileMetaData: FileMetaData): Unit = {
         _seekFile = Option(fileMetaData)
     }
+
+    def seekFile = _seekFile
+
+    def seekFileLevel = _seekFileLevel
 }
 
 object ReadStats {
