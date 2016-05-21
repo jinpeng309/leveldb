@@ -2,8 +2,6 @@ package com.capslock.leveldb
 
 import com.capslock.leveldb.comparator.InternalKeyComparator
 
-import scala.util.Success
-
 /**
  * Created by capslock.
  */
@@ -11,7 +9,7 @@ class Level0(var files: List[FileMetaData], tableCache: TableCache, internalKeyC
     extends SeekingIterable[InternalKey, Slice] {
 
     def addFile(file: FileMetaData): Unit = {
-        files = file :: files
+        files = files ::: List(file)
     }
 
     def someFileOverlapsRange(smallestUserKey: Slice, largestUserKey: Slice): Boolean = {
@@ -33,21 +31,20 @@ class Level0(var files: List[FileMetaData], tableCache: TableCache, internalKeyC
                 })
                 .sortWith((left, right) => right.fileNumber - left.fileNumber < 0)
                 .foreach(file => {
-                    tableCache.newIterator(file) match {
-                        case Success(iterator) =>
-                            iterator.seek(targetKey.internalKey)
-                            if (iterator.hasNext) {
-                                val (key, value) = iterator.next
-                                if (key == targetKey.internalKey && key.valueType == ValueType.VALUE) {
-                                    return Some(LookupResult.ok(targetKey, value))
-                                } else if (key == targetKey.internalKey && key.valueType == ValueType.DELETION) {
-                                    return Some(LookupResult.deleted(targetKey))
-                                }
+                    for (iterator <- tableCache.newIterator(file)) {
+                        iterator.seek(targetKey.internalKey)
+                        if (iterator.hasNext) {
+                            val (key, value) = iterator.next
+                            if (key == targetKey.internalKey && key.valueType == ValueType.VALUE) {
+                                return Some(LookupResult.ok(targetKey, value))
+                            } else if (key == targetKey.internalKey && key.valueType == ValueType.DELETION) {
+                                return Some(LookupResult.deleted(targetKey))
                             }
-                            if (readStats.seekFile.isEmpty) {
-                                readStats.seekFile = file
-                                readStats.seekFileLevel = 0
-                            }
+                        }
+                        if (readStats.seekFile.isEmpty) {
+                            readStats.seekFile = file
+                            readStats.seekFileLevel = 0
+                        }
                     }
                 })
 
@@ -72,7 +69,7 @@ class Level0(var files: List[FileMetaData], tableCache: TableCache, internalKeyC
             }
             right
         } else {
-            0
+            files.size
         }
     }
 

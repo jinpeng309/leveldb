@@ -9,9 +9,7 @@ import scala.collection.mutable
  */
 class Level0Iterator(val tableCache: TableCache, val files: List[FileMetaData], val comparator: Comparator[InternalKey])
     extends AbstractSeekingIterator[InternalKey, Slice] with InternalIterator {
-    val inputs = files.map(file => tableCache.newIterator(file))
-        .filter(iterator => iterator.isSuccess)
-        .map(iterator => iterator.get)
+    val inputs = files.flatMap(file => tableCache.newIterator(file))
     val priorityQueue: mutable.PriorityQueue[ComparableIterator] = mutable.PriorityQueue[ComparableIterator]()
     resetPriorityQueue()
 
