@@ -6,9 +6,11 @@ import java.util.concurrent.atomic.AtomicInteger
  * Created by capslock.
  */
 case class FileMetaData(fileNumber: Long, fileSize: Long, smallest: InternalKey, largest: InternalKey) {
-    var allowedSeeks = new AtomicInteger(1 << 30)
+    var _allowedSeeks = new AtomicInteger(1 << 30)
 
-    def allowedSeeks_=(value: Int) = allowedSeeks.set(value)
+    def allowedSeeks = _allowedSeeks.get()
 
-    def decrementAllowedSeeks(): Int = allowedSeeks.getAndDecrement()
+    def allowedSeeks_=(value: Int): Unit = _allowedSeeks.set(value)
+
+    def decrementAllowedSeeks(): Int = _allowedSeeks.getAndDecrement()
 }

@@ -5,9 +5,9 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import com.capslock.leveldb.FileName.LongToFileNameImplicit
 import com.capslock.leveldb.comparator.InternalKeyComparator
-import com.google.common.collect.MapMaker
+import com.google.common.collect.{ComparisonChain, MapMaker}
 
-import scala.collection.immutable.TreeMap
+import scala.collection.immutable.{HashSet, TreeMap, TreeSet}
 
 /**
  * Created by capslock.
@@ -20,7 +20,7 @@ class VersionSet(val databaseDir: File, val tableCache: TableCache, val internal
     var lastSequence: Long = 0
     var logNumber: Long = 0
     var preLogNumber: Long = 0
-    val compactPointers = TreeMap[Int, InternalKey]()
+    var compactPointers = TreeMap[Int, InternalKey]()
     private val activeVersions = new MapMaker().weakKeys.makeMap[Version, Object]()
     var current: Option[Version] = Option(new Version(this))
     activeVersions.put(current.get, new Object)
@@ -107,6 +107,68 @@ class VersionSet(val databaseDir: File, val tableCache: TableCache, val internal
         require(current.isDefined, "current version is empty")
         current.get.iterator()
     }
+
+    def get(lookupKey: LookupKey): Option[LookupResult] = {
+        current.flatMap(version => version.get(lookupKey)).orElse(Option.empty)
+    }
+
+    def numberOfFilesInLevel(level: Int): Int = {
+        current.map(version => version.numberOfFilesInLevel(level)).getOrElse(-1)
+    }
+}
+
+case class LevelState(internalKeyComparator: InternalKeyComparator) {
+    val fileMetaDataOrdering = new Ordering[FileMetaData] {
+        override def compare(f1: FileMetaData, f2: FileMetaData): Int = {
+            ComparisonChain
+                .start
+                .compare(f1.smallest, f2.smallest, internalKeyComparator)
+                .compare(f1.fileNumber, f2.fileNumber)
+                .result
+        }
+    }
+    var addedFiles = new TreeSet[FileMetaData]()(fileMetaDataOrdering)
+    var deletedFiles = HashSet[Long]()
+
+}
+
+class Builder(versionSet: VersionSet, baseVersion: Version) {
+    val levels: List[LevelState] = List.fill(DbConstants.NUM_LEVELS)(LevelState(versionSet.internalKeyComparator))
+
+    def apply(versionEdit: VersionEdit): Unit = {
+        versionEdit.compactPointers.foreach(entry => versionSet.compactPointers += entry)
+
+        versionEdit.deleteFiles.foreach {
+            case (level: Int, fileList: List[Long]) =>
+                levels(level).deletedFiles ++= fileList
+        }
+        // We arrange to automatically compact this file after
+        // a certain number of seeks.  Let's assume:
+        //   (1) One seek costs 10ms
+        //   (2) Writing or reading 1MB costs 10ms (100MB/s)
+        //   (3) A compaction of 1MB does 25MB of IO:
+        //         1MB read from this level
+        //         10-12MB read from next level (boundaries may be misaligned)
+        //         10-12MB written to next level
+        // This implies that 25 seeks cost the same as the compaction
+        // of 1MB of data.  I.e., one seek costs approximately the
+        // same as the compaction of 40KB of data.  We are a little
+        // conservative and allow approximately one seek for every 16KB
+        // of data before triggering a compaction.
+        versionEdit.newFiles.foreach {
+            case (level: Int, fileList: List[FileMetaData]) =>
+                fileList.foreach(file => {
+                    var allowedSeeks = file.fileSize / 16384
+                    if (allowedSeeks < 100) {
+                        allowedSeeks = 100
+                    }
+                    file.allowedSeeks = allowedSeeks.toInt
+                    levels(level).deletedFiles -= file.fileNumber
+                    levels(level).addedFiles += file
+                })
+        }
+    }
+
 }
 
 object VersionSet {

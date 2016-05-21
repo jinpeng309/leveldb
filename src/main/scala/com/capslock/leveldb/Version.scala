@@ -91,7 +91,7 @@ class Version(val versionSet: VersionSet) extends SeekingIterable[InternalKey, S
         for (file <- readStats.seekFile;
              level <- readStats.seekFileLevel) {
             file.decrementAllowedSeeks()
-            if (file.allowedSeeks.get() <= 0 && fileToCompact.isEmpty) {
+            if (file._allowedSeeks.get() <= 0 && fileToCompact.isEmpty) {
                 fileToCompact = Some(file)
                 fileToCompactLevel = Some(level)
             }
