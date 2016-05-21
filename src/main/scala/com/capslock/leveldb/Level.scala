@@ -21,7 +21,7 @@ class Level(val levelNumber: Int, tableCache: TableCache, internalKeyComparator:
                 } else if (key.userKey == lookupKey.userKey && key.valueType == ValueType.DELETION) {
                     Some(LookupResult.deleted(lookupKey))
                 }
-            }else{
+            } else {
                 Option.empty
             }
         }
@@ -59,5 +59,5 @@ class Level(val levelNumber: Int, tableCache: TableCache, internalKeyComparator:
         }
     }
 
-    override def iterator(): LevelIterator = ???
+    override def iterator(): LevelIterator = LevelIterator(tableCache, files, internalKeyComparator)
 }

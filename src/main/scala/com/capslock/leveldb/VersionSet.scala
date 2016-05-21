@@ -12,7 +12,8 @@ import scala.collection.immutable.TreeMap
 /**
  * Created by capslock.
  */
-class VersionSet(val databaseDir: File, val tableCache: TableCache, val internalKeyComparator: InternalKeyComparator) {
+class VersionSet(val databaseDir: File, val tableCache: TableCache, val internalKeyComparator: InternalKeyComparator)
+    extends SeekingIterable[InternalKey, Slice] {
     val userComparator = internalKeyComparator.userComparator
     val nextFileNumber = new AtomicInteger(2)
     var manifestFileNumber: Long = 1
@@ -75,6 +76,9 @@ class VersionSet(val databaseDir: File, val tableCache: TableCache, val internal
     }
 
 
+    def getNextFileNumber(): Int = nextFileNumber.incrementAndGet()
+
+
     private def writeSnapshot(logWriter: LogWriter): Unit = {
         val edit = VersionEdit()
         edit.comparatorName = Option(internalKeyComparator.name())
@@ -97,6 +101,11 @@ class VersionSet(val databaseDir: File, val tableCache: TableCache, val internal
                     userComparator.compare(file.smallest.userKey, largest) <= 0)
         }
         List()
+    }
+
+    override def iterator(): SeekingIterator[InternalKey, Slice] = {
+        require(current.isDefined, "current version is empty")
+        current.get.iterator()
     }
 }
 

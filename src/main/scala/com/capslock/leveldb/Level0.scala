@@ -73,5 +73,5 @@ class Level0(var files: List[FileMetaData], tableCache: TableCache, internalKeyC
         }
     }
 
-    override def iterator(): SeekingIterator[InternalKey, Slice] = Level0Iterator(tableCache, files, internalKeyComparator)
+    override def iterator(): InternalIterator = Level0Iterator(tableCache, files, internalKeyComparator)
 }

@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger
 /**
  * Created by capslock.
  */
-class Version(val versionSet: VersionSet) {
+class Version(val versionSet: VersionSet) extends SeekingIterable[InternalKey, Slice] {
     val retained = new AtomicInteger(1)
     val level0 = new Level0(List(), versionSet.tableCache, versionSet.internalKeyComparator)
     val levels = List.tabulate(DbConstants.NUM_LEVELS - 1)(level =>
@@ -113,5 +113,10 @@ class Version(val versionSet: VersionSet) {
     def release(): Unit = {
         val was = retained.getAndDecrement()
         require(was >= 0, "Version was released after it was disposed.")
+    }
+
+    override def iterator(): MergingIterator = {
+        val iteratorList = level0.iterator() :: levels.map(level => level.iterator())
+        MergingIterator(iteratorList, versionSet.internalKeyComparator)
     }
 }

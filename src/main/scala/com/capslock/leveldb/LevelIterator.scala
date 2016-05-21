@@ -5,7 +5,7 @@ import com.capslock.leveldb.comparator.InternalKeyComparator
 /**
  * Created by capslock.
  */
-class LevelIterator(tableCache: TableCache, files: List[FileMetaData], internalKeyComparator: InternalKeyComparator)
+case class LevelIterator(tableCache: TableCache, files: List[FileMetaData], internalKeyComparator: InternalKeyComparator)
     extends AbstractSeekingIterator[InternalKey, Slice] with InternalIterator {
     var index = 0
     var current = Option.empty[InternalTableIterator]

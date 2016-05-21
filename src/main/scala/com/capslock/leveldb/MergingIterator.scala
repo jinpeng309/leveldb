@@ -7,7 +7,7 @@ import scala.collection.mutable
 /**
  * Created by capslock.
  */
-class MergingIterator(levelIterators: List[InternalIterator], comparator: Comparator[InternalKey])
+case class MergingIterator(levelIterators: List[InternalIterator], comparator: Comparator[InternalKey])
     extends AbstractSeekingIterator[InternalKey, Slice] {
     val priorityQueue: mutable.PriorityQueue[ComparableIterator] = mutable.PriorityQueue[ComparableIterator]()
 
