@@ -13,6 +13,7 @@ import scala.collection.immutable.TreeMap
  * Created by capslock.
  */
 class VersionSet(val databaseDir: File, val tableCache: TableCache, val internalKeyComparator: InternalKeyComparator) {
+    val userComparator = internalKeyComparator.userComparator
     val nextFileNumber = new AtomicInteger(2)
     var manifestFileNumber: Long = 1
     var lastSequence: Long = 0
@@ -87,6 +88,15 @@ class VersionSet(val databaseDir: File, val tableCache: TableCache, val internal
         }
 
         logWriter.addRecord(edit.toSlice, force = false)
+    }
+
+    def getOverlappingInputs(level: Int, smallest: Slice, largest: Slice): List[FileMetaData] = {
+        for (currentVersion <- current) {
+            return currentVersion.getFiles(level)
+                .filter(file => userComparator.compare(file.largest.userKey, smallest) >= 0 &&
+                    userComparator.compare(file.smallest.userKey, largest) <= 0)
+        }
+        List()
     }
 }
 

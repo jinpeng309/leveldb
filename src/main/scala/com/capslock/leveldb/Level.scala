@@ -6,7 +6,7 @@ import com.capslock.leveldb.comparator.InternalKeyComparator
 /**
  * Created by capslock.
  */
-class Level(levelNumber: Int, tableCache: TableCache, internalKeyComparator: InternalKeyComparator, var files: List[FileMetaData])
+class Level(val levelNumber: Int, tableCache: TableCache, internalKeyComparator: InternalKeyComparator, var files: List[FileMetaData])
     extends SeekingIterable[InternalKey, Slice] {
     val userComparator = internalKeyComparator.userComparator
 
@@ -59,5 +59,5 @@ class Level(levelNumber: Int, tableCache: TableCache, internalKeyComparator: Int
         }
     }
 
-    override def iterator(): SeekingIterator[InternalKey, Slice] = ???
+    override def iterator(): LevelIterator = ???
 }

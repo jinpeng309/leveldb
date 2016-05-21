@@ -28,4 +28,8 @@ object ReadStats {
     def apply(level: Int, fileMetaData: FileMetaData): ReadStats = {
         new ReadStats(Some(level), Some(fileMetaData))
     }
+
+    def apply():ReadStats={
+        new ReadStats()
+    }
 }
