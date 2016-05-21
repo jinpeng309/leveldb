@@ -10,6 +10,8 @@ class Version(val versionSet: VersionSet) {
     val level0 = new Level0(List(), versionSet.tableCache, versionSet.internalKeyComparator)
     val levels = List.tabulate(DbConstants.NUM_LEVELS - 1)(level =>
         new Level(level + 1, versionSet.tableCache, versionSet.internalKeyComparator, List()))
+    var fileToCompact = Option.empty[FileMetaData]
+    var fileToCompactLevel = Option.empty[Int]
 
     def numberOfFilesInLevel(level: Int): Int = {
         level match {
@@ -85,9 +87,22 @@ class Version(val versionSet: VersionSet) {
         Option.empty
     }
 
+    def updateStats(readStats: ReadStats): Unit = {
+        for (file <- readStats.seekFile;
+             level <- readStats.seekFileLevel) {
+            file.decrementAllowedSeeks()
+            if (file.allowedSeeks.get() <= 0 && fileToCompact.isEmpty) {
+                fileToCompact = Some(file)
+                fileToCompactLevel = Some(level)
+            }
+        }
+    }
+
     def get(lookupKey: LookupKey): Option[LookupResult] = {
         val readStats = ReadStats()
-        getInLevel0(lookupKey, readStats).orElse(getInLevel0(lookupKey, readStats))
+        val result = getInLevel0(lookupKey, readStats).orElse(getInLevel0(lookupKey, readStats))
+        updateStats(readStats)
+        result
     }
 
     def retain(): Unit = {
