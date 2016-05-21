@@ -118,15 +118,7 @@ class VersionSet(val databaseDir: File, val tableCache: TableCache, val internal
 }
 
 case class LevelState(internalKeyComparator: InternalKeyComparator) {
-    val fileMetaDataOrdering = new Ordering[FileMetaData] {
-        override def compare(f1: FileMetaData, f2: FileMetaData): Int = {
-            ComparisonChain
-                .start
-                .compare(f1.smallest, f2.smallest, internalKeyComparator)
-                .compare(f1.fileNumber, f2.fileNumber)
-                .result
-        }
-    }
+    val fileMetaDataOrdering = VersionSet.getFileMetaDataOrdering(internalKeyComparator)
     var addedFiles = new TreeSet[FileMetaData]()(fileMetaDataOrdering)
     var deletedFiles = HashSet[Long]()
 
@@ -169,10 +161,47 @@ class Builder(versionSet: VersionSet, baseVersion: Version) {
         }
     }
 
+    def saveTo(version: Version): Unit = {
+        val comparator = VersionSet.getFileMetaDataOrdering(versionSet.internalKeyComparator)
+        baseVersion.getFiles().foreach {
+            case (level: Int, files: List[FileMetaData]) =>
+                val addedFiles = levels(level).addedFiles
+                val sortedFiles = files ::: addedFiles.toList
+                sortedFiles.sorted(comparator)
+                    .foreach(file => maybeAddFile(version, level, file))
+
+
+        }
+    }
+
+    def maybeAddFile(version: Version, level: Int, fileMetaData: FileMetaData): Unit = {
+        if (!levels(level).deletedFiles.contains(fileMetaData.fileNumber)) {
+            val files = version.getFiles(level)
+            if (level > 0 && files.nonEmpty) {
+                val fileOverlap = versionSet.internalKeyComparator.compare(files.last.largest, fileMetaData.smallest) >= 0
+                require(!fileOverlap,
+                    s"Compaction is obsolete files :${files.last.largest}, ${fileMetaData.fileNumber}, level = $level")
+            }
+            version.addFile(level, fileMetaData)
+        }
+    }
+
 }
 
 object VersionSet {
     val L0_COMPACTION_TRIGGER: Int = 4
     val TARGET_FILE_SIZE: Int = 2 * 1048576
     val MAX_GRAND_PARENT_OVERLAP_BYTES: Long = 10 * TARGET_FILE_SIZE
+
+    def getFileMetaDataOrdering(internalKeyComparator: InternalKeyComparator): Ordering[FileMetaData] = {
+        new Ordering[FileMetaData] {
+            override def compare(f1: FileMetaData, f2: FileMetaData): Int = {
+                ComparisonChain
+                    .start
+                    .compare(f1.smallest, f2.smallest, internalKeyComparator)
+                    .compare(f1.fileNumber, f2.fileNumber)
+                    .result
+            }
+        }
+    }
 }

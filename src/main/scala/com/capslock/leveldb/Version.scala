@@ -13,6 +13,13 @@ class Version(val versionSet: VersionSet) extends SeekingIterable[InternalKey, S
     var fileToCompact = Option.empty[FileMetaData]
     var fileToCompactLevel = Option.empty[Int]
 
+    def addFile(level: Int, file: FileMetaData): Unit = {
+        level match {
+            case 0 => level0.addFile(file)
+            case _ if level < DbConstants.NUM_LEVELS => levels(level - 1).addFile(file)
+        }
+    }
+
     def numberOfFilesInLevel(level: Int): Int = {
         level match {
             case 0 => level0.files.size
