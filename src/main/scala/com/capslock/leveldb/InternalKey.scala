@@ -33,4 +33,6 @@ object InternalKey {
         }
     }
 
+
+    val empty = InternalKey(Slice.empty, 0, ValueType.DELETION)
 }

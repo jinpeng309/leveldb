@@ -1,11 +1,13 @@
 package com.capslock.leveldb
 
-import java.io.File
-import java.util.concurrent.atomic.AtomicInteger
+import java.io.{File, FileInputStream}
+import java.util.concurrent.atomic.AtomicLong
 
 import com.capslock.leveldb.FileName.LongToFileNameImplicit
 import com.capslock.leveldb.comparator.InternalKeyComparator
+import com.google.common.base.Charsets
 import com.google.common.collect.{ComparisonChain, MapMaker}
+import com.google.common.io.Files
 
 import scala.collection.immutable.{HashSet, TreeMap, TreeSet}
 
@@ -15,7 +17,7 @@ import scala.collection.immutable.{HashSet, TreeMap, TreeSet}
 class VersionSet(val databaseDir: File, val tableCache: TableCache, val internalKeyComparator: InternalKeyComparator)
     extends SeekingIterable[InternalKey, Slice] {
     val userComparator = internalKeyComparator.userComparator
-    val nextFileNumber = new AtomicInteger(2)
+    val nextFileNumber = new AtomicLong(2)
     var manifestFileNumber: Long = 1
     var lastSequence: Long = 0
     var logNumber: Long = 0
@@ -76,7 +78,7 @@ class VersionSet(val databaseDir: File, val tableCache: TableCache, val internal
     }
 
 
-    def getNextFileNumber(): Int = nextFileNumber.incrementAndGet()
+    def getNextFileNumber(): Long = nextFileNumber.incrementAndGet()
 
 
     private def writeSnapshot(logWriter: LogWriter): Unit = {
@@ -115,6 +117,204 @@ class VersionSet(val databaseDir: File, val tableCache: TableCache, val internal
     def numberOfFilesInLevel(level: Int): Int = {
         current.map(version => version.numberOfFilesInLevel(level)).getOrElse(-1)
     }
+
+    def logAndApply(edit: VersionEdit): Unit = {
+        if (edit.logNumber.isEmpty) {
+            edit.logNumber = Some(logNumber)
+        }
+
+        if (edit.previousLogNumber.isEmpty) {
+            edit.previousLogNumber = Some(preLogNumber)
+        }
+
+        edit.nextFileNumber = Some(nextFileNumber.get())
+        edit.lastSequenceNumber = Some(lastSequence)
+
+        val version = Version(this)
+        val builder = Builder(this, version)
+        builder.apply(edit)
+        builder.saveTo(version)
+
+        finalizeVersion(version)
+
+        var createNewManifest = false
+
+        if (descriptorLog.isEmpty) {
+            edit.nextFileNumber = Some(nextFileNumber.get())
+            descriptorLog = Some(MMapLogWriter(new File(databaseDir, manifestFileNumber.toDescriptorFileName), manifestFileNumber))
+            writeSnapshot(descriptorLog.get)
+            createNewManifest = true
+        }
+        if (createNewManifest) {
+            FileName.setCurrentFile(databaseDir, manifestFileNumber)
+        }
+
+        appendVersion(version)
+        logNumber = edit.logNumber.getOrElse(-1)
+        preLogNumber = edit.previousLogNumber.getOrElse(-1)
+    }
+
+    def recover(): Unit = {
+        val currentFile = new File(databaseDir, FileName.currentFileName)
+        var currentName = Files.toString(currentFile, Charsets.UTF_8)
+        require(currentName.charAt(currentName.length - 1) == '\n', "CURRENT file does not end with newline")
+        currentName = currentName.substring(0, currentName.length - 1)
+
+        val fileChannel = new FileInputStream(new File(databaseDir, currentName)).getChannel
+        try {
+            var nextFileNumber = Option.empty[Long]
+            var lastSequence = Option.empty[Long]
+            var logNumber = Option.empty[Long]
+            var preLogNumber = Option.empty[Long]
+            val builder = Builder(this, current.get)
+
+            val reader = new LogReader(fileChannel, true, 0)
+            var record = reader.readRecord()
+
+            while (record.isDefined) {
+                val edit = VersionEdit(record.get)
+
+                val editComparator = edit.comparatorName
+                val stringComparator = internalKeyComparator.userComparator
+                require(editComparator.isEmpty || editComparator.get == stringComparator,
+                    s"Expected user comparator ${editComparator.get} to match existing database comparator")
+                record = reader.readRecord()
+
+                builder.apply(edit)
+
+                nextFileNumber = edit.nextFileNumber.orElse(nextFileNumber)
+                lastSequence = edit.lastSequenceNumber.orElse(lastSequence)
+                logNumber = edit.logNumber.orElse(logNumber)
+                preLogNumber = edit.previousLogNumber.orElse(preLogNumber)
+            }
+
+            val version = Version(this)
+            builder.saveTo(version)
+            finalizeVersion(version)
+
+            appendVersion(version)
+            manifestFileNumber = nextFileNumber.getOrElse(0)
+            this.nextFileNumber.set(nextFileNumber.getOrElse(0))
+            this.lastSequence = lastSequence.getOrElse(0)
+            this.logNumber = logNumber.getOrElse(0)
+            this.preLogNumber = preLogNumber.getOrElse(0)
+
+        } finally {
+            try {
+                fileChannel.close()
+            } catch {
+                case _: Throwable => fileChannel.close()
+            }
+        }
+
+    }
+
+    def pickCompaction(): Option[Compaction] = {
+        val sizeCompaction = current.flatMap(version => version.compactScore).exists(score => score > 1)
+        val seekCompaction = current.flatMap(version => version.fileToCompact).isDefined
+
+        var level = 0
+        var levelInputs = List[FileMetaData]()
+        for (version <- current;
+             compactLevel <- version.compactLevel) {
+
+            if (sizeCompaction) {
+                level = compactLevel
+                val fileToAdd = version.getFiles(level).find(file => {
+                    !compactPointers.contains(level) || internalKeyComparator.compare(file.largest, compactPointers.get(level).get) > 0
+                })
+                levelInputs = fileToAdd.getOrElse(version.getFiles(level).head) :: levelInputs
+            } else if (seekCompaction) {
+                level = version.fileToCompactLevel.get
+                levelInputs = List(version.fileToCompact.get)
+            } else {
+                return Option.empty
+            }
+        }
+
+        if (level == 0) {
+            val (smallest, largest) = getRange(levelInputs)
+            levelInputs = getOverlappingInputs(level, smallest.userKey, largest.userKey)
+        }
+
+        Option.empty
+    }
+
+
+    def setupOtherInputs(level: Int, levelInputs: List[FileMetaData]): Option[Compaction] = {
+        var (smallest, largest) = getRange(levelInputs)
+        var newLevelInputs = levelInputs
+        var levelUpInputs = getOverlappingInputs(level + 1, smallest.userKey, largest.userKey)
+
+        var (allStart, allEnd) = getRange(levelInputs, levelUpInputs)
+        if (levelUpInputs.nonEmpty) {
+            val expand0 = getOverlappingInputs(level, allStart.userKey, allEnd.userKey)
+            if (expand0.size > levelInputs.size) {
+                val (newStart, newEnd) = getRange(expand0)
+                val expand1 = getOverlappingInputs(level + 1, newStart.userKey, newEnd.userKey)
+
+                if (expand1.size == levelUpInputs.size) {
+                    smallest = newStart
+                    largest = newEnd
+                    newLevelInputs = expand0
+                    levelUpInputs = expand1
+
+                    val (newAllStart, newAllEnd) = getRange(newLevelInputs, levelUpInputs)
+                    allStart = newAllStart
+                    allEnd = newAllEnd
+                }
+            }
+        }
+        var grandparents = List[FileMetaData]()
+        if (level + 2 < DbConstants.NUM_LEVELS) {
+            grandparents = grandparents ::: getOverlappingInputs(level + 2, allStart.userKey, allEnd.userKey)
+        }
+        current.flatMap(version => {
+            val compaction = Compaction(version, level, newLevelInputs, levelUpInputs, grandparents)
+            compactPointers += (level -> largest)
+            compaction.edit.setCompactPoint(level, largest)
+            Some(compaction)
+        })
+    }
+
+    def expandRange(left: (InternalKey, InternalKey), right: (InternalKey, InternalKey)): (InternalKey, InternalKey) = {
+        val smaller = if (internalKeyComparator.compare(left._1, right._1) < 0) left._1 else right._1
+        val larger = if (internalKeyComparator.compare(left._2, right._2) > 0) left._2 else right._2
+        (smaller, larger)
+    }
+
+    def getRange(inputLists: List[FileMetaData]*): (InternalKey, InternalKey) = {
+        require(inputLists.nonEmpty)
+        inputLists.map(inputList => {
+            inputList.foldLeft((InternalKey.empty, InternalKey.empty)) {
+                case (range, file) => expandRange(range, (file.smallest, file.largest))
+            }
+        }).foldLeft((InternalKey.empty, InternalKey.empty)) {
+            case (left, right) => expandRange(left, right)
+        }
+
+    }
+
+    def finalizeVersion(version: Version): Unit = {
+        var baseLevel = 0
+        var baseScore = 1.0 * version.numberOfFilesInLevel(0) / DbConstants.L0_COMPACTION_TRIGGER
+
+        1 to 6 foreach (level => {
+            val sumBytes = version.getFiles(level).foldLeft(0L)((levelBytes, file) => levelBytes + file.fileSize)
+            val score = 1.0 * sumBytes / maxBytesForLevel(level)
+            if (score > baseScore) {
+                baseLevel = level
+                baseScore = score
+            }
+        })
+        version.compactLevel = Some(baseLevel)
+        version.compactScore = Some(baseScore)
+    }
+
+    private def maxBytesForLevel(level: Int): Double = {
+        val init: Double = 10 * 1048576.0
+        init * Math.pow(10, level - 1)
+    }
 }
 
 case class LevelState(internalKeyComparator: InternalKeyComparator) {
@@ -124,7 +324,7 @@ case class LevelState(internalKeyComparator: InternalKeyComparator) {
 
 }
 
-class Builder(versionSet: VersionSet, baseVersion: Version) {
+case class Builder(versionSet: VersionSet, baseVersion: Version) {
     val levels: List[LevelState] = List.fill(DbConstants.NUM_LEVELS)(LevelState(versionSet.internalKeyComparator))
 
     def apply(versionEdit: VersionEdit): Unit = {

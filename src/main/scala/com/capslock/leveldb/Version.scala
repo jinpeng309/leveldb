@@ -5,13 +5,15 @@ import java.util.concurrent.atomic.AtomicInteger
 /**
  * Created by capslock.
  */
-class Version(val versionSet: VersionSet) extends SeekingIterable[InternalKey, Slice] {
+case class Version(val versionSet: VersionSet) extends SeekingIterable[InternalKey, Slice] {
     val retained = new AtomicInteger(1)
     val level0 = new Level0(List(), versionSet.tableCache, versionSet.internalKeyComparator)
     val levels = List.tabulate(DbConstants.NUM_LEVELS - 1)(level =>
         new Level(level + 1, versionSet.tableCache, versionSet.internalKeyComparator, List()))
     var fileToCompact = Option.empty[FileMetaData]
     var fileToCompactLevel = Option.empty[Int]
+    var compactLevel= Option.empty[Int]
+    var compactScore = Option.empty[Double]
 
     def addFile(level: Int, file: FileMetaData): Unit = {
         level match {
