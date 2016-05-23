@@ -5,8 +5,8 @@ import scala.collection.mutable
 /**
  * Created by capslock.
  */
-class IntVector(capability: Int) {
-    val values = mutable.MutableList(capability)
+class IntVector() {
+    val values = mutable.MutableList.empty[Int]
 
     def size = values.size
 
@@ -17,8 +17,8 @@ class IntVector(capability: Int) {
     def write(sliceOutput: SliceOutput) = values.foreach(value => sliceOutput.writeInt(value))
 }
 
-object IntVector{
-    def apply(capability: Int) : IntVector = {
-        new IntVector(capability)
+object IntVector {
+    def apply(): IntVector = {
+        new IntVector()
     }
 }

@@ -217,6 +217,10 @@ final class Slice(val data: Array[Byte], val offset: Int, val length: Int) exten
 object Slice {
     def empty = Slice(0)
 
+    def apply(value: String):Slice={
+        Slice(value.getBytes)
+    }
+
     def apply(length: Int): Slice = {
         new Slice(Array.fill(length)(0), 0, length)
     }
@@ -246,7 +250,7 @@ object Slice {
         var commonBytes = 0
         for (leftKey <- sliceA; rightKey <- sliceB) {
             val minLength = Math.min(leftKey.length, rightKey.length)
-            while (commonBytes > minLength && leftKey.getUnsignedByte(commonBytes) == rightKey.getUnsignedByte(commonBytes)) {
+            while (commonBytes < minLength && leftKey.getUnsignedByte(commonBytes) == rightKey.getUnsignedByte(commonBytes)) {
                 commonBytes += 1
             }
         }

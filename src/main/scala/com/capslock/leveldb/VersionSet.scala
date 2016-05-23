@@ -237,7 +237,7 @@ class VersionSet(val databaseDir: File, val tableCache: TableCache, val internal
             levelInputs = getOverlappingInputs(level, smallest.userKey, largest.userKey)
         }
 
-        Option.empty
+        setupOtherInputs(level, levelInputs)
     }
 
 

@@ -8,9 +8,9 @@ import com.capslock.leveldb.BlockIterator.BlockEntry
 /**
  * Created by capslock.
  */
-class BlockBuilder(estimate: Int, blockRestartInterval: Int, comparator: Comparator[Slice]) {
+case class BlockBuilder(estimate: Int, blockRestartInterval: Int, comparator: Comparator[Slice]) {
     val block = DynamicSliceOutput(estimate)
-    val restartPositions = IntVector(32)
+    val restartPositions = IntVector()
     restartPositions.add(0)
 
     var finished = false
@@ -35,6 +35,8 @@ class BlockBuilder(estimate: Int, blockRestartInterval: Int, comparator: Compara
     }
 
     def add(key: Slice, value: Slice): Unit = {
+        require(!finished, "block is finished")
+        require(lastKey.isEmpty || comparator.compare(key, lastKey.get) > 0, "key must be greater than last key")
         var sharedKeyBytes = 0
         if (restartBlockEntryCount < blockRestartInterval) {
             sharedKeyBytes = Slice.calculateCommonBytes(Option(key), lastKey)
@@ -62,7 +64,9 @@ class BlockBuilder(estimate: Int, blockRestartInterval: Int, comparator: Compara
         } else if (block.size == 0) {
             SizeOf.SIZE_OF_INT
         } else {
-            block.size + restartPositions.size * SizeOf.SIZE_OF_INT + SizeOf.SIZE_OF_INT
+            block.size + // raw data buffer
+                restartPositions.size * SizeOf.SIZE_OF_INT + //restart positions
+                SizeOf.SIZE_OF_INT //restart position size
         }
     }
 
