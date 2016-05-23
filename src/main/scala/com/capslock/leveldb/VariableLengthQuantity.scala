@@ -46,7 +46,7 @@ object VariableLengthQuantity {
 
     def readVariableLengthInt(sliceInput: SliceInput): Int = {
         var result = 0
-        for (shift <- 0 until 28 by 7) {
+        for (shift <- 0 to 28 by 7) {
             val b = sliceInput.readUnsignedByte()
             result |= ((b & 0x7f) << shift)
             if ((b & 0x80) == 0) {
@@ -58,7 +58,7 @@ object VariableLengthQuantity {
 
     def readVariableLengthInt(sliceInput: ByteBuffer): Int = {
         var result = 0
-        for (shift <- 0 until 28 by 7) {
+        for (shift <- 0 to 28 by 7) {
             val b = sliceInput.get()
             result |= ((b & 0x7f) << shift)
             if ((b & 0x80) == 0) {
@@ -69,11 +69,11 @@ object VariableLengthQuantity {
     }
 
 
-    def readVariableLengthLong(sliceInput: SliceInput): Int = {
-        var result = 0
-        for (shift <- 0 until 63 by 7) {
+    def readVariableLengthLong(sliceInput: SliceInput): Long = {
+        var result: Long = 0L
+        for (shift <- 0 to 63 by 7) {
             val b = sliceInput.readUnsignedByte()
-            result |= ((b & 0x7f) << shift)
+            result |= (b & 0x7f).toLong << shift
             if ((b & 0x80) == 0) {
                 return result
             }
