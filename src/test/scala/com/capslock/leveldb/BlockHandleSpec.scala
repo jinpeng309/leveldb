@@ -4,7 +4,7 @@ import org.scalamock.scalatest.MockFactory
 import org.scalatest.{FlatSpec, Matchers}
 
 /**
- * Created by alvin.
+ * Created by capslock.
  */
 class BlockHandleSpec extends FlatSpec with Matchers with MockFactory {
 
