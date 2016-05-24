@@ -17,6 +17,6 @@ object SequenceNumber {
     }
 
     def unpackValueType(packedData: Long): ValueType = {
-        ValueType(packedData.toInt)
+        ValueType(packedData.toByte)
     }
 }

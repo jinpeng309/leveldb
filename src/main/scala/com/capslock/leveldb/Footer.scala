@@ -27,5 +27,4 @@ object Footer {
         sliceOutput.writeZero(MAX_ENCODE_LENGTH - SizeOf.SIZE_OF_LONG - (sliceOutput.size - startIndex))
         sliceOutput.writeLong(MAGIC_NUMBER)
     }
-
 }

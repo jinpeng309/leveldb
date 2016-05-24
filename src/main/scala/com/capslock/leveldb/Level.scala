@@ -6,8 +6,8 @@ import com.capslock.leveldb.comparator.InternalKeyComparator
 /**
  * Created by capslock.
  */
-class Level(val levelNumber: Int, tableCache: TableCache, internalKeyComparator: InternalKeyComparator, var files: List[FileMetaData])
-    extends SeekingIterable[InternalKey, Slice] {
+class Level(val levelNumber: Int, tableCache: TableCache, internalKeyComparator: InternalKeyComparator,
+            var files: List[FileMetaData]) extends SeekingIterable[InternalKey, Slice] {
     val userComparator = internalKeyComparator.userComparator
 
     def get(lookupKey: LookupKey, readStats: ReadStats): Option[LookupResult] = {
