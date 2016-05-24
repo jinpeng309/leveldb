@@ -121,7 +121,7 @@ class LogReader(val fileChannel: FileChannel, verifyChecksum: Boolean, initialOf
 
         val expectedChecksum = currentBlock.readInt
         var length = currentBlock.readUnsignedByte()
-        length = length | currentBlock.readUnsignedByte()
+        length = length | (currentBlock.readUnsignedByte() << 8)
         val chunkTypeId = currentBlock.readByte
         val logChunkType = LogChunkType(chunkTypeId)
 
@@ -142,5 +142,10 @@ class LogReader(val fileChannel: FileChannel, verifyChecksum: Boolean, initialOf
 
         logChunkType
     }
+}
 
+object LogReader {
+    def apply(fileChannel: FileChannel, verifyChecksum: Boolean, initialOffset: Long): LogReader = {
+        new LogReader(fileChannel, verifyChecksum, initialOffset)
+    }
 }

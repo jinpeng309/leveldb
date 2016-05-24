@@ -56,19 +56,20 @@ class MMapLogWriter(file: File, fileNumber: Long) extends LogWriter {
 
 
         for (buffer <- mappedByteBuffer) {
-            if (force)
+            if (force) {
                 buffer.force()
+            }
         }
     }
 
     def writeChunk(logChunkType: LogChunkType, slice: Slice) = {
         require(!closed.get(), "Log has been closed")
+        require(mappedByteBuffer.isDefined)
         val header = newLogRecordHeader(logChunkType, slice)
-        val buffer = mappedByteBuffer.get
         ensureCapacity(HEADER_SIZE + slice.length)
+        val buffer = mappedByteBuffer.get
         header.getBytes(0, buffer)
         slice.getBytes(0, buffer)
-
         blockOffset += HEADER_SIZE + slice.length
     }
 
@@ -104,19 +105,19 @@ class MMapLogWriter(file: File, fileNumber: Long) extends LogWriter {
     override def close(): Unit = {
         if (!closed.get()) {
             closed.set(true)
+            destroyMappedByteBuffer()
             if (fileChannel.isOpen) {
                 fileChannel.truncate(fileOffset)
             }
-            destroyMappedByteBuffer()
             Closeables.closeQuietly(fileChannel)
         }
     }
 
     private def destroyMappedByteBuffer(): Unit = {
-        mappedByteBuffer.foreach(buffer => {
+        for (buffer <- mappedByteBuffer) {
             fileOffset += buffer.position()
             unmap()
-        })
+        }
         mappedByteBuffer = Option.empty[MappedByteBuffer]
     }
 

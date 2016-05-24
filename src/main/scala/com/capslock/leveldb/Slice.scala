@@ -150,7 +150,7 @@ final class Slice(val data: Array[Byte], val offset: Int, val length: Int) exten
     def copySlice(index: Int, length: Int): Slice = {
         val innerIndex = index + offset
         val copyData = Array.fill[Byte](length)(0)
-        data.copyToArray(copyData, innerIndex)
+        System.arraycopy(data, innerIndex, copyData, 0, length)
         Slice(copyData)
     }
 

@@ -97,7 +97,11 @@ class BasicSliceOutput(sliceData: Slice) extends SliceOutput {
     override def slice(): Slice = sliceData.slice(0, size)
 
     override def writeBytes(source: ScatteringByteChannel, length: Int): Int = {
-        sliceData.setBytes(size, source, length)
+        val writeBytes = sliceData.setBytes(size, source, length)
+        if(writeBytes > 0){
+            size += writeBytes
+        }
+        writeBytes
     }
 }
 

@@ -120,7 +120,11 @@ class DynamicSliceOutput(estimatedSize: Int) extends SliceOutput {
 
     override def writeBytes(source: ScatteringByteChannel, length: Int): Int = {
         ensureSize(size + length)
-        sliceData.setBytes(size, source, length)
+        val writeBytes = sliceData.setBytes(size, source, length)
+        if(writeBytes > 0){
+            size += writeBytes
+        }
+        writeBytes
     }
 }
 
