@@ -17,13 +17,13 @@ object BlockTrailer {
     }
 
     def writeBlockTrailer(blockTrailer: BlockTrailer): Slice = {
-        val slice = Slice(5)
+        val slice = Slice(ENCODE_LENGTH)
         writeBlockTrailer(blockTrailer, BasicSliceOutput(slice))
         slice
     }
 
     def writeBlockTrailer(blockTrailer: BlockTrailer, sliceOutput: SliceOutput) = {
-        sliceOutput.writeInt(blockTrailer.compressionType.id)
-        sliceOutput.writeByte(blockTrailer.crc32c)
+        sliceOutput.writeByte(blockTrailer.compressionType.id)
+        sliceOutput.writeInt(blockTrailer.crc32c)
     }
 }
