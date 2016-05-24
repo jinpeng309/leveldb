@@ -15,8 +15,8 @@ object Footer {
         val indexBlockHandle = BlockHandle.readBlockHandle(sliceInput)
 
         sliceInput.position = MAX_ENCODE_LENGTH - SizeOf.SIZE_OF_LONG
-        val magicNumber = sliceInput.readLong
-//        assert(magicNumber == MAGIC_NUMBER, "File is not a table (bad magic number)")
+        val magicNumber = sliceInput.readLong()
+        assert(magicNumber == MAGIC_NUMBER, "File is not a table (bad magic number)")
         Footer(metaIndexBlockHandle, indexBlockHandle)
     }
 

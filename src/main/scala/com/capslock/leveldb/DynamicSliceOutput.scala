@@ -59,9 +59,9 @@ class DynamicSliceOutput(estimatedSize: Int) extends SliceOutput {
     override def writeZero(length: Int): Unit = {
         if (length > 0) {
             ensureSize(size + length)
-            val nLong = length >>> 8
+            val nLong = length.toLong >>> 3
             val nBytes = length & 7
-            for (i <- 0 until nLong) {
+            for (i <- 0L until nLong) {
                 writeLong(0)
             }
             nBytes match {
@@ -109,6 +109,7 @@ class DynamicSliceOutput(estimatedSize: Int) extends SliceOutput {
             }
             val result = Slice(newCapability)
             result.setBytes(0, sliceData, 0, sliceData.length)
+            sliceData = result
         }
     }
 

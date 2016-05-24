@@ -13,6 +13,7 @@ object FileName {
     val DescriptorFilePattern = "MANIFEST-(\\d+)".r
     val LogFilePattern = "(\\d+).log".r
     val TableFilePattern = "(\\d+).sst".r
+    val TempFilePattern = "(\\d+).dbtmp".r
 
     implicit class LongToFileNameImplicit(number: Long) {
         def toTableFileName: String = {
@@ -28,7 +29,7 @@ object FileName {
         }
 
         def toDatabaseTempFileName: String = {
-            "%06D.dbtmp".format(number)
+            "%06d.dbtmp".format(number)
         }
     }
 
@@ -43,6 +44,7 @@ object FileName {
                 case DescriptorFilePattern(fileNumber) => FileInfo(FileType.DESCRIPTOR, fileNumber.toLong)
                 case LogFilePattern(fileNumber) => FileInfo(FileType.LOG, fileNumber.toLong)
                 case TableFilePattern(fileNumber) => FileInfo(FileType.TABLE, fileNumber.toLong)
+                case TempFilePattern(fileNumber) => FileInfo(FileType.TEMP, fileNumber.toLong)
             }
         }
     }
