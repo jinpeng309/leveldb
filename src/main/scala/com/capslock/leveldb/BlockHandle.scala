@@ -21,7 +21,7 @@ object BlockHandle {
         slice
     }
 
-    def writeBlockHandle(blockHandler: BlockHandle, sliceOutput: SliceOutput) = {
+    def writeBlockHandle(blockHandler: BlockHandle, sliceOutput: SliceOutput): Unit = {
         VariableLengthQuantity.writeVariableLengthLong(blockHandler.offset, sliceOutput)
         VariableLengthQuantity.writeVariableLengthLong(blockHandler.dataSize, sliceOutput)
     }
