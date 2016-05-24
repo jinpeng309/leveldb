@@ -17,6 +17,7 @@ class VersionEditTagSpec extends FlatSpec with Matchers with MockFactory {
         testNextFileNumber()
         testLastSequence()
         testCompactPointer()
+        testDeleteFile()
     }
 
     def testReadWriteForComparator(): Unit = {
@@ -78,7 +79,12 @@ class VersionEditTagSpec extends FlatSpec with Matchers with MockFactory {
         val versionEditTag = VersionEditTag.COMPACT_POINTER
         val versionEditForWrite = VersionEdit()
         var compactPointers = TreeMap[Int, InternalKey]()
-        compactPointers += (1 -> InternalKey(Slice("key"), 10000L, ValueType.VALUE))
+        compactPointers += (1 -> InternalKey(Slice("key1"), 10000L, ValueType.VALUE))
+        compactPointers += (2 -> InternalKey(Slice("key2"), 10001L, ValueType.VALUE))
+        compactPointers += (3 -> InternalKey(Slice("key3"), 10002L, ValueType.VALUE))
+        compactPointers += (4 -> InternalKey(Slice("key4"), 10003L, ValueType.VALUE))
+        compactPointers += (5 -> InternalKey(Slice("key5"), 10004L, ValueType.VALUE))
+
         versionEditForWrite.compactPointers = compactPointers
 
         testEditTagWriteRead(versionEditTag, versionEditForWrite, versionEdit => {
@@ -86,6 +92,17 @@ class VersionEditTagSpec extends FlatSpec with Matchers with MockFactory {
                 case (level: Int, key: InternalKey) =>
                     InternalKeyComparator(BytewiseComparator()).compare(compactPointers(level), key) shouldEqual 0
             }
+        })
+    }
+
+    def testDeleteFile(): Unit = {
+        val versionEditTag = VersionEditTag.COMPACT_POINTER
+        val versionEditForWrite = VersionEdit()
+        val deleteFiles = Map(1 -> List(1L, 2L, 3L))
+        versionEditForWrite.deleteFiles = deleteFiles
+
+        testEditTagWriteRead(versionEditTag, versionEditForWrite, versionEdit => {
+            versionEdit.deleteFiles shouldEqual deleteFiles
         })
     }
 
