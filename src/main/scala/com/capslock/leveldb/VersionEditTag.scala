@@ -163,8 +163,15 @@ case object NEW_FILE extends VersionEditTag(7) {
 object VersionEditTag {
     def getVersionEditTagByPersistentId(persistentId: Int): Option[VersionEditTag] = {
         persistentId match {
-            case COMPARATOR.persistentId => Option(COMPARATOR)
-            case _ => None
+            case COMPARATOR.persistentId => Some(COMPARATOR)
+            case LOG_NUMBER.persistentId => Some(LOG_NUMBER)
+            case PREVIOUS_LOG_NUMBER.persistentId => Some(PREVIOUS_LOG_NUMBER)
+            case NEXT_FILE_NUMBER.persistentId => Some(NEXT_FILE_NUMBER)
+            case LAST_SEQUENCE.persistentId => Some(LAST_SEQUENCE)
+            case COMPACT_POINTER.persistentId => Some(COMPACT_POINTER)
+            case DELETED_FILE.persistentId => Some(DELETED_FILE)
+            case NEW_FILE.persistentId => Some(NEW_FILE)
+            case _ => Option.empty
         }
     }
 

@@ -12,18 +12,24 @@ class LogWriterReaderSpec extends FlatSpec with Matchers {
 
     import FileName._
 
-    "LogWriter and LogReader" should "match each other" in {
-
-        val fileNumber = 100L
+    def testReadAndWrite(fileNumber: Long, sliceData: Slice): Unit = {
         val file = new File(fileNumber.toLogFileName)
-        val sliceData = Slice("data")
         val logWriter = MMapLogWriter(file, fileNumber)
         logWriter.addRecord(sliceData, force = true)
         logWriter.close()
 
-        val logReader = LogReader(new FileInputStream(file).getChannel, verifyChecksum = false, 0)
+        val fileChannel = new FileInputStream(file).getChannel
+        val logReader = LogReader(fileChannel, verifyChecksum = false, 0)
         val slice = logReader.readRecord()
         slice.isDefined shouldBe true
         BytewiseComparator().compare(sliceData, slice.get) shouldEqual 0
+        fileChannel.close()
+        file.delete()
+    }
+
+    "LogWriter and LogReader" should "match each other" in {
+        testReadAndWrite(1L, Slice("a"))
+        testReadAndWrite(2L, Slice("a" * LogConstants.BLOCK_SIZE))
+        testReadAndWrite(3L, Slice("a" * LogConstants.BLOCK_SIZE * 3))
     }
 }
