@@ -17,7 +17,6 @@ class VersionEditTagSpec extends FlatSpec with Matchers with MockFactory {
         testNextFileNumber()
         testLastSequence()
         testCompactPointer()
-        testDeleteFile()
     }
 
     def testReadWriteForComparator(): Unit = {
@@ -26,7 +25,7 @@ class VersionEditTagSpec extends FlatSpec with Matchers with MockFactory {
         val comparatorName = Some("comparator")
         versionEditForWrite.comparatorName = comparatorName
 
-        testEditTagWriteRead(versionEditTag, versionEditForWrite, versionEdit => {
+        testEditTagWriteRead(versionEditTag, versionEditForWrite, 0, versionEdit => {
             versionEdit.comparatorName shouldEqual comparatorName
         })
     }
@@ -37,7 +36,7 @@ class VersionEditTagSpec extends FlatSpec with Matchers with MockFactory {
         val logNumber = Some(1000L)
         versionEditForWrite.logNumber = logNumber
 
-        testEditTagWriteRead(versionEditTag, versionEditForWrite, versionEdit => {
+        testEditTagWriteRead(versionEditTag, versionEditForWrite, 0, versionEdit => {
             versionEdit.logNumber shouldEqual logNumber
         })
     }
@@ -48,7 +47,7 @@ class VersionEditTagSpec extends FlatSpec with Matchers with MockFactory {
         val preLogNumber = Some(10000L)
         versionEditForWrite.previousLogNumber = preLogNumber
 
-        testEditTagWriteRead(versionEditTag, versionEditForWrite, versionEdit => {
+        testEditTagWriteRead(versionEditTag, versionEditForWrite, 0, versionEdit => {
             versionEdit.previousLogNumber shouldEqual preLogNumber
         })
     }
@@ -59,7 +58,7 @@ class VersionEditTagSpec extends FlatSpec with Matchers with MockFactory {
         val nextFileNumber = Some(100000L)
         versionEditForWrite.nextFileNumber = nextFileNumber
 
-        testEditTagWriteRead(versionEditTag, versionEditForWrite, versionEdit => {
+        testEditTagWriteRead(versionEditTag, versionEditForWrite, 0, versionEdit => {
             versionEdit.nextFileNumber shouldEqual nextFileNumber
         })
     }
@@ -70,7 +69,7 @@ class VersionEditTagSpec extends FlatSpec with Matchers with MockFactory {
         val lastSequence = Some(100000L)
         versionEditForWrite.lastSequenceNumber = lastSequence
 
-        testEditTagWriteRead(versionEditTag, versionEditForWrite, versionEdit => {
+        testEditTagWriteRead(versionEditTag, versionEditForWrite, 0, versionEdit => {
             versionEdit.lastSequenceNumber shouldEqual lastSequence
         })
     }
@@ -87,33 +86,34 @@ class VersionEditTagSpec extends FlatSpec with Matchers with MockFactory {
 
         versionEditForWrite.compactPointers = compactPointers
 
-        testEditTagWriteRead(versionEditTag, versionEditForWrite, versionEdit => {
+        testEditTagWriteRead(versionEditTag, versionEditForWrite, compactPointers.size, versionEdit => {
             versionEdit.compactPointers.foreach {
                 case (level: Int, key: InternalKey) =>
+                    println(s"key = ${key.sequenceNumber}")
                     InternalKeyComparator(BytewiseComparator()).compare(compactPointers(level), key) shouldEqual 0
             }
         })
     }
 
     def testDeleteFile(): Unit = {
-        val versionEditTag = VersionEditTag.COMPACT_POINTER
+        val versionEditTag = VersionEditTag.DELETED_FILE
         val versionEditForWrite = VersionEdit()
         val deleteFiles = Map(1 -> List(1L, 2L, 3L))
         versionEditForWrite.deleteFiles = deleteFiles
 
-        testEditTagWriteRead(versionEditTag, versionEditForWrite, versionEdit => {
+        testEditTagWriteRead(versionEditTag, versionEditForWrite, 0, versionEdit => {
             versionEdit.deleteFiles shouldEqual deleteFiles
         })
     }
 
-    def testEditTagWriteRead(versionEditTag: VersionEditTag, versionEditForWrite: VersionEdit,
+    def testEditTagWriteRead(versionEditTag: VersionEditTag, versionEditForWrite: VersionEdit, readTimes: Int,
                              checkFunc: (VersionEdit) => Unit): Unit = {
-        val (persistentId, resultVersionEdit) = writeEditToSliceAndReadEditFromSlice(versionEditTag, versionEditForWrite)
+        val (persistentId, resultVersionEdit) = writeEditToSliceAndReadEditFromSlice(versionEditTag, versionEditForWrite, readTimes)
         persistentId shouldEqual versionEditTag.persistentId
         checkFunc(resultVersionEdit)
     }
 
-    def writeEditToSliceAndReadEditFromSlice(versionEditTag: VersionEditTag, versionEdit: VersionEdit): (Int, VersionEdit) = {
+    def writeEditToSliceAndReadEditFromSlice(versionEditTag: VersionEditTag, versionEdit: VersionEdit, readTimes: Int): (Int, VersionEdit) = {
         val output = DynamicSliceOutput(10)
         versionEditTag.writeValue(output, versionEdit)
         val input = SliceInput(output.slice())

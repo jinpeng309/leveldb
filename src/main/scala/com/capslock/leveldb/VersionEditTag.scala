@@ -106,7 +106,10 @@ object VersionEditTag {
 
     case object DELETED_FILE extends VersionEditTag(6) {
         override def readValue(sliceInput: SliceInput, versionEdit: VersionEdit): Unit = {
+            val level = VariableLengthQuantity.readVariableLengthInt(sliceInput)
+            val fileNumber = VariableLengthQuantity.readVariableLengthLong(sliceInput)
 
+            versionEdit.deleteFile(level, fileNumber)
         }
 
         override def writeValue(sliceOutput: SliceOutput, versionEdit: VersionEdit): Unit = {
