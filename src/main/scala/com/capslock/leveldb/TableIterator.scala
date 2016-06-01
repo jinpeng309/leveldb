@@ -40,7 +40,7 @@ class TableIterator(table: Table, blockIterator: BlockIterator) extends Abstract
     def getNextBlock(): Option[BlockIterator] = {
         if (blockIterator.hasNext) {
             val blockEntry = blockIterator.next()._2
-            table.openBlock(blockEntry).map(block => block.iterator())
+            table.openBlock(blockEntry).map(block => block.iterator)
         } else {
             Option.empty
         }

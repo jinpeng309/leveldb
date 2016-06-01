@@ -15,7 +15,7 @@ class Block(block: Slice, comparator: Comparator[Slice]) extends SeekingIterable
 
     def size = data.length
 
-    override def iterator(): BlockIterator = BlockIterator(data, restartPositions, comparator)
+    override def iterator: BlockIterator = BlockIterator(data, restartPositions, comparator)
 }
 
 object Block {

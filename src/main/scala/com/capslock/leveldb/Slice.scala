@@ -1,6 +1,7 @@
 package com.capslock.leveldb
 
 import java.io.{InputStream, OutputStream}
+import java.nio.ByteOrder._
 import java.nio.channels.{FileChannel, ScatteringByteChannel}
 import java.nio.{ByteBuffer, ByteOrder}
 
@@ -173,6 +174,15 @@ final class Slice(val data: Array[Byte], val offset: Int, val length: Int) exten
         slice(0, length)
     }
 
+    def toByteBuffer(index: Int, length: Int): ByteBuffer = {
+        val innerIndex = index + offset
+        ByteBuffer.wrap(data, index, length).order(LITTLE_ENDIAN)
+    }
+
+    def toByteBuffer(): ByteBuffer = {
+        toByteBuffer(0, length)
+    }
+
 
     override def compareTo(anotherSlice: Slice): Int = {
         if (this.equals(anotherSlice)) {
@@ -217,7 +227,7 @@ final class Slice(val data: Array[Byte], val offset: Int, val length: Int) exten
 object Slice {
     def empty = Slice(0)
 
-    def apply(value: String):Slice={
+    def apply(value: String): Slice = {
         Slice(value.getBytes)
     }
 

@@ -1,11 +1,14 @@
 package com.capslock.leveldb
 
-import java.io.{File, FileInputStream, IOException}
+import java.io.{File, FileInputStream, FileOutputStream, IOException}
 import java.util.concurrent.locks.ReentrantLock
 
 import com.capslock.leveldb.FileName.{FileToFileInfoImplicit, LongToFileNameImplicit}
 import com.capslock.leveldb.Loan.loan
 import com.capslock.leveldb.comparator.{BytewiseComparator, InternalKeyComparator}
+
+import scala.collection.mutable.ListBuffer
+import scala.util.{Failure, Success, Try}
 
 /**
  * Created by capslock.
@@ -21,7 +24,7 @@ class DbImpl(options: Options, databaseDir: File) {
     val dbLock = DbLock(new File(databaseDir, FileName.lockFile))
     val versions = VersionSet(databaseDir, tableCache, internalKeyComparator)
     var log: LogWriter = null
-    var pendingOutputs = List[Long]()
+    var pendingOutputs = ListBuffer[Long]()
     recoverDb()
 
     def recoverDb(): Unit = {
@@ -67,7 +70,7 @@ class DbImpl(options: Options, databaseDir: File) {
 
     def deleteObsoleteFiles() = {
         require(mutex.isHeldByCurrentThread)
-        val liveFiles = pendingOutputs ::: versions.liveFiles().map(fileMetaData => fileMetaData.fileNumber)
+        val liveFiles = pendingOutputs.toList ::: versions.liveFiles().map(fileMetaData => fileMetaData.fileNumber)
         databaseDir.listFiles()
             .filterNot(file => {
                 file.toFileInfo match {
@@ -90,7 +93,55 @@ class DbImpl(options: Options, databaseDir: File) {
     }
 
 
-    def writeLevel0Table(memTable: MemTable, versionEdit: VersionEdit, maybeVersion: Option[Version]) = ???
+    def buildTable(data: SeekingIterable[InternalKey, Slice], fileNumber: Long): Try[FileMetaData] = {
+        val file = new File(databaseDir, fileNumber.toTableFileName)
+        loan(new FileOutputStream(file).getChannel).to[Try[FileMetaData]](channel => {
+            var smallest = Option.empty[InternalKey]
+            var largest = Option.empty[InternalKey]
+            try{
+                val tableBuilder = TableBuilder(options, channel, internalKeyComparator.userComparator)
+                val iterator = data.iterator
+                while(iterator.hasNext){
+                    val (key, value) = iterator.next()
+                    if(smallest.isEmpty){
+                        smallest = Some(key)
+                    }
+                    largest = Some(key)
+                    tableBuilder.add(key.toSlice, value)
+                }
+                tableBuilder.finish()
+                if(smallest.isEmpty){
+                    Failure(new IllegalStateException())
+                }else{
+                    val fileMeta  =FileMetaData(fileNumber, file.length(),smallest.get, largest.get)
+                    pendingOutputs -= fileNumber
+                    Success(fileMeta)
+                }
+            } catch{
+                case _:IOException =>
+                    file.delete()
+                    Failure(new IOException())
+                case e:Throwable=> Failure(e)
+            }
+        })
+    }
+
+    private def writeLevel0Table(memTable: MemTable, versionEdit: VersionEdit, maybeVersion: Option[Version]) = {
+        require(mutex.isHeldByCurrentThread)
+        val fileNumber = versions.getNextFileNumber()
+        pendingOutputs += fileNumber
+
+        buildTable(memTable, fileNumber) match {
+            case Success(fileMeta) =>
+
+            case Failure(e) =>
+        }
+
+        mutex.unlock()
+        pendingOutputs -= fileNumber
+        mutex.lock()
+
+    }
 
     @throws(classOf[IOException])
     def recoverLogFile(fileNumber: Long, versionEdit: VersionEdit): Long = {
