@@ -121,26 +121,37 @@ class DbImpl(options: Options, databaseDir: File) {
                 case _:IOException =>
                     file.delete()
                     Failure(new IOException())
-                case e:Throwable=> Failure(e)
+                case e:Throwable=>
+                    Failure(e)
             }
         })
     }
 
-    private def writeLevel0Table(memTable: MemTable, versionEdit: VersionEdit, maybeVersion: Option[Version]) = {
+    @throws(classOf[IOException])
+    private def writeLevel0Table(memTable: MemTable, versionEdit: VersionEdit, baseVersion: Option[Version]): Unit = {
         require(mutex.isHeldByCurrentThread)
         val fileNumber = versions.getNextFileNumber()
         pendingOutputs += fileNumber
 
-        buildTable(memTable, fileNumber) match {
-            case Success(fileMeta) =>
-
-            case Failure(e) =>
-        }
-
         mutex.unlock()
-        pendingOutputs -= fileNumber
+        val result = buildTable(memTable, fileNumber)
         mutex.lock()
+        pendingOutputs -= fileNumber
 
+        result match {
+            case Success(fileMeta) =>
+                var level = 0
+                if (fileMeta.fileSize > 0) {
+                    val smallestUserKey = fileMeta.smallest.userKey
+                    val largestUserKey = fileMeta.largest.userKey
+                    for (version <- baseVersion) {
+                        level = version.pickLevelForMemTableOutput(smallestUserKey, largestUserKey)
+                    }
+                    versionEdit.addFile(level, fileMeta)
+                }
+            case Failure(e) =>
+                throw e
+        }
     }
 
     @throws(classOf[IOException])
