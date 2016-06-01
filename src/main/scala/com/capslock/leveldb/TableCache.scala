@@ -36,6 +36,14 @@ class TableCache(databaseDir: File, tableCacheSize: Int, userComparator: UserCom
     def evict(fileNumber: Long): Unit = cache.invalidate(fileNumber)
 }
 
+object TableCache {
+
+    def apply(databaseDir: File, tableCacheSize: Int, userComparator: UserComparator, verifyChecksum: Boolean): TableCache = {
+        new TableCache(databaseDir, tableCacheSize, userComparator, verifyChecksum)
+    }
+}
+
+
 class TableAndFile(databaseDir: File, fileNumber: Long, userComparator: UserComparator, verifyChecksum: Boolean) {
 
     import FileName.LongToFileNameImplicit

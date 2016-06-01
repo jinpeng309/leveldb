@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicLong
 import com.capslock.leveldb.FileName.LongToFileNameImplicit
 import com.capslock.leveldb.comparator.InternalKeyComparator
 import com.google.common.base.Charsets
-import com.google.common.collect.{ComparisonChain, MapMaker}
+import com.google.common.collect.ComparisonChain
 import com.google.common.io.Files
 
 import scala.collection.immutable.{HashSet, TreeMap, TreeSet}
@@ -23,9 +23,8 @@ class VersionSet(val databaseDir: File, val tableCache: TableCache, val internal
     var logNumber: Long = 0
     var preLogNumber: Long = 0
     var compactPointers = TreeMap[Int, InternalKey]()
-    private val activeVersions = new MapMaker().weakKeys.makeMap[Version, Object]()
     var current: Option[Version] = Option(new Version(this))
-    activeVersions.put(current.get, new Object)
+    private var activeVersions = Set[Version](current.get)
     var descriptorLog = Option.empty[LogWriter]
 
 
@@ -52,6 +51,12 @@ class VersionSet(val databaseDir: File, val tableCache: TableCache, val internal
         }
     }
 
+    def liveFiles(): List[FileMetaData] = {
+        activeVersions
+            .flatMap(version => version.getFiles().values)
+            .foldLeft(List[FileMetaData]())((result, fileList) => result ::: fileList)
+    }
+
     def destroy(): Unit = {
         for (log <- descriptorLog) {
             log.close()
@@ -67,14 +72,14 @@ class VersionSet(val databaseDir: File, val tableCache: TableCache, val internal
     def appendVersion(version: Version): Unit = {
         val previous = current
         current = Option(version)
-        activeVersions.put(version, new Object)
+        activeVersions += version
         for (previousVersion <- previous) {
             previousVersion.release()
         }
     }
 
     def removeVersion(version: Version): Unit = {
-        activeVersions.remove(version)
+        activeVersions -= version
     }
 
 
@@ -392,6 +397,10 @@ object VersionSet {
     val L0_COMPACTION_TRIGGER: Int = 4
     val TARGET_FILE_SIZE: Int = 2 * 1048576
     val MAX_GRAND_PARENT_OVERLAP_BYTES: Long = 10 * TARGET_FILE_SIZE
+
+    def apply(databaseDir: File, tableCache: TableCache, internalKeyComparator: InternalKeyComparator): VersionSet = {
+        new VersionSet(databaseDir, tableCache, internalKeyComparator)
+    }
 
     def getFileMetaDataOrdering(internalKeyComparator: InternalKeyComparator): Ordering[FileMetaData] = {
         new Ordering[FileMetaData] {

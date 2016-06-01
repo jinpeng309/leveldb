@@ -65,6 +65,10 @@ final class SliceInput(slice: Slice) extends InputStream with DataInput {
         readBytes(data, offset, length)
     }
 
+    def readLengthPrefixedBytes(): Slice ={
+        val length = VariableLengthQuantity.readVariableLengthInt(this)
+        readBytes(length)
+    }
     override def skipBytes(n: Int): Int = {
         val skipSize = Math.min(n, available)
         position += skipSize
